@@ -96,7 +96,7 @@ This allows the contract to be deployed to Rinkeby. It has a lifecycle of 5 days
 
 ```Solidity
 //testnet
-name = "Value"; symbol = "VAL2"; decimals = 18; totalSupply = 16380*10**decimals;                         
+name = "Vether"; symbol = "VETH"; decimals = 18; totalSupply = 16380*10**decimals;                         
 emission = 2048000000000000000000; currentEra = 1; currentDay = 1;               // Set emission, era and day
 genesis = now; daysPerEra = 4; secondsPerDay = 10000;                            // Set genesis time
 burnAddress = address(0);
@@ -151,3 +151,27 @@ Or execute individually:
 ```
 truffle test test/1_coin.js
 ```
+
+## Analysis
+
+```
+surya graph contracts/Vether.sol | dot -Tpng > analysis/Vether-Graph.png
+```
+
+```
+surya describe contracts/Vether.sol
+```
+
+```
+surya inheritance contracts/Vether.sol | dot -Tpng > analysis/Vether-Inheritance.png
+````
+
+```
+surya parse contracts/Vether.sol
+```
+
+```
+surya mdreport analysis/report_vether.md contracts/Vether.sol
+```
+
+
