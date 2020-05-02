@@ -38,9 +38,9 @@ The following public getters are available to query:
 ```Solidity
 // Public Parameters
 uint256 public emission;
-uint public currentEra; uint public currentDay;
-uint public daysPerEra; uint public secondsPerDay;
-uint public genesis; uint public nextEraTime; uint public nextDayTime;
+uint256 public currentEra; uint256 public currentDay;
+uint256 public daysPerEra; uint256 public secondsPerDay;
+uint256 public genesis; uint256 public nextEraTime; uint256 public nextDayTime;
 address payable public burnAddress;
 address[2] public registryAddrArray; bool public registryAdded;
 uint256 public totalFees; uint256 public totalBurnt;
@@ -56,8 +56,8 @@ mapping(address=>mapping(uint=>uint[])) public mapMemberEra_Days;
 
 // Public Get Functions
 function getExchange(address token ) public view returns (address)
-function getDaysContributedForEra(address member, uint era) public view returns(uint days)
-function getEmissionShare(uint era, uint day, address member) public view returns (uint256 emissionShare)
+function getDaysContributedForEra(address member, uint256 era) public view returns(uint256 days)
+function getEmissionShare(uint256 era, uint256 day, address member) public view returns (uint256 emissionShare)
 function getNextEraEmission() public view returns (uint256)
 function getDayEmission() public view returns (uint256)
 ```
@@ -69,9 +69,9 @@ receive() external payable
 function burnEtherForMember(address member) external payable
 function burnTokens(address token, uint256 amount) external
 function burnTokensForMember(address token, uint256 amount, address member) external 
-function addRegistry(address registry, uint index) external
-function withdrawShare(uint era, uint day) external 
-function withdrawShareForMember(uint era, uint day, address member) external
+function addRegistry(address registry, uint256 index) external
+function withdrawShare(uint256 era, uint256 day) external 
+function withdrawShareForMember(uint256 era, uint256 day, address member) external
 ```
 
 ### Constructor

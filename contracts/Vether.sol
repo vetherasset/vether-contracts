@@ -28,25 +28,25 @@ contract Vether is ERC20 {
     mapping(address => mapping(address => uint256)) public override allowance;
     // Public Parameters
     uint256 public emission;
-    uint public currentEra; uint public currentDay;
-    uint public daysPerEra; uint public secondsPerDay;
-    uint public genesis; uint public nextEraTime; uint public nextDayTime;
+    uint256 public currentEra; uint256 public currentDay;
+    uint256 public daysPerEra; uint256 public secondsPerDay;
+    uint256 public genesis; uint256 public nextEraTime; uint256 public nextDayTime;
     address payable public burnAddress;
     address[2] public registryAddrArray; bool public registryAdded;
     uint256 public totalFees; uint256 public totalBurnt;
     // Public Mappings
     mapping(uint=>uint256) public mapEra_Emission;                                           // Era->Emission
     mapping(uint=>mapping(uint=>uint256)) public mapEraDay_Units;                            // Era,Days->Units
-    mapping(uint=>mapping(uint=>uint256)) public mapEraDay_UnitsRemaining;                       // Era,Days->TotalUnits
+    mapping(uint=>mapping(uint=>uint256)) public mapEraDay_UnitsRemaining;                   // Era,Days->TotalUnits
     mapping(uint=>mapping(uint=>uint256)) public mapEraDay_Emission;                         // Era,Days->Emission
-    mapping(uint=>mapping(uint=>uint256)) public mapEraDay_EmissionRemaining;                         // Era,Days->Emission
+    mapping(uint=>mapping(uint=>uint256)) public mapEraDay_EmissionRemaining;                // Era,Days->Emission
     mapping(uint=>mapping(uint=>mapping(address=>uint256))) public mapEraDay_MemberUnits;    // Era,Days,Member->Units
     mapping(address=>mapping(uint=>uint[])) public mapMemberEra_Days;                        // Member,Era->Days[]
     // Events
-    event NewEra(uint era, uint256 emission, uint time);
-    event NewDay(uint era, uint day, uint time);
-    event Burn(address indexed payer, address indexed member, uint era, uint day, uint256 units);
-    event Withdrawal(address indexed caller, address indexed member, uint era, uint day, uint256 value);
+    event NewEra(uint256 era, uint256 emission, uint256 time);
+    event NewDay(uint256 era, uint256 day, uint256 time);
+    event Burn(address indexed payer, address indexed member, uint256 era, uint256 day, uint256 units);
+    event Withdrawal(address indexed caller, address indexed member, uint256 era, uint256 day, uint256 value);
 
     //=====================================CREATION=========================================//
     // Constructor
@@ -69,7 +69,7 @@ contract Vether is ERC20 {
         // emission = 2048000000000000000000; currentEra = 1; currentDay = 1;               // Set emission, Era and Day
         // genesis = now; daysPerEra = 244; secondsPerDay = 84196;                          // Set genesis time
         // burnAddress = address(0);                                                        // Set Burn Address
-        // registryAddrArray[0] = 0xf5D915570BC477f9B8D6C0E980aA81757A3AaC36;                // Set UniSwap V1 Mainnet
+        // registryAddrArray[0] = 0xf5D915570BC477f9B8D6C0E980aA81757A3AaC36;               // Set UniSwap V1 Mainnet
         
         balanceOf[address(this)] = totalSupply; 
         emit Transfer(address(0), address(this), totalSupply);                              // Mint the total supply to this address
@@ -100,7 +100,7 @@ contract Vether is ERC20 {
         return true;
     }
     // Internal transfer function which includes the Fee
-    function _transfer(address _from, address _to, uint _value) internal {
+    function _transfer(address _from, address _to, uint256 _value) internal {
         require(balanceOf[_from] >= _value, 'Must not send more than balance');
         require(balanceOf[_to] + _value >= balanceOf[_to], 'Balance overflow');
         balanceOf[_from] -= _value;
@@ -170,19 +170,19 @@ contract Vether is ERC20 {
         return exchangeToReturn;
     }
     // Internal - Records burn
-    function _recordBurn(address _payer, address _member, uint _era, uint _day, uint256 _eth) internal {
-        if (mapEraDay_MemberUnits[_era][_day][_member] == 0){                                // If hasn't contributed to this Day yet
-            mapMemberEra_Days[_member][_era].push(_day);                                     // Add it
+    function _recordBurn(address _payer, address _member, uint256 _era, uint256 _day, uint256 _eth) internal {
+        if (mapEraDay_MemberUnits[_era][_day][_member] == 0){                               // If hasn't contributed to this Day yet
+            mapMemberEra_Days[_member][_era].push(_day);                                    // Add it
         }
-        mapEraDay_MemberUnits[_era][_day][_member] += _eth;                                  // Add member's share
-        mapEraDay_UnitsRemaining[_era][_day] += _eth;                                            // Add to total historicals
-        mapEraDay_Units[_era][_day] += _eth;                                                 // Add to total outstanding
+        mapEraDay_MemberUnits[_era][_day][_member] += _eth;                                 // Add member's share
+        mapEraDay_UnitsRemaining[_era][_day] += _eth;                                       // Add to total historicals
+        mapEraDay_Units[_era][_day] += _eth;                                                // Add to total outstanding
         totalBurnt += _eth;                                                                 // Add to total burnt
         emit Burn(_payer, _member, _era, _day, _eth);                                       // Burn event
         _updateEmission();                                                                  // Update emission Schedule
     }
     // Allows updating of registry
-    function addRegistry(address registry, uint index) external {
+    function addRegistry(address registry, uint256 index) external {
         if(!registryAdded){
             require((UniswapFactory(registry).getExchange(address(0)) == address(0)), "Must be valid Registry");
             _transfer(msg.sender, address(this), emission);
@@ -191,25 +191,25 @@ contract Vether is ERC20 {
         }
     }
     // ################-REMOVE_THIS_FOR_MAINNET-##########################
-    function addRegistryInternal(address registry, uint index) public {
+    function addRegistryInternal(address registry, uint256 index) public {
         registryAddrArray[index] = registry;
     }
     // ################-REMOVE_THIS_FOR_MAINNET-##########################
     //======================================WITHDRAWAL======================================//
     // Used to efficiently track participation in each era
-    function getDaysContributedForEra(address member, uint era) public view returns(uint){
+    function getDaysContributedForEra(address member, uint256 era) public view returns(uint){
         return mapMemberEra_Days[member][era].length;
     }
     // Call to withdraw a claim
-    function withdrawShare(uint era, uint day) external {
+    function withdrawShare(uint256 era, uint256 day) external {
         _withdrawShare(era, day, msg.sender);                           
     }
     // Call to withdraw a claim for another member
-    function withdrawShareForMember(uint era, uint day, address member) external {
+    function withdrawShareForMember(uint256 era, uint256 day, address member) external {
         _withdrawShare(era, day, member);
     }
     // Internal - withdraw function
-    function _withdrawShare (uint _era, uint _day, address _member) private {                                                                 // Update emission Schedule
+    function _withdrawShare (uint256 _era, uint256 _day, address _member) private {                                                                 // Update emission Schedule
         _updateEmission();
         if (_era < currentEra) {                                                            // Allow if in previous era
             _processWithdrawal(_era, _day, _member);                                        // Process Withdrawal
@@ -220,7 +220,7 @@ contract Vether is ERC20 {
         }   
     }
     // Internal - Withdrawal function
-    function _processWithdrawal (uint _era, uint _day, address _member) private {
+    function _processWithdrawal (uint256 _era, uint256 _day, address _member) private {
         uint256 memberUnits = mapEraDay_MemberUnits[_era][_day][_member];                   // Get Member Units
         if (memberUnits == 0) {                                                             // Do nothing if 0 (prevents revert)
         } else {
@@ -233,7 +233,7 @@ contract Vether is ERC20 {
         }
     }
          // Get emission Share function
-    function getEmissionShare(uint era, uint day, address member) public view returns (uint256 emissionShare) {
+    function getEmissionShare(uint256 era, uint256 day, address member) public view returns (uint256 emissionShare) {
         uint256 memberUnits = mapEraDay_MemberUnits[era][day][member];                      // Get Member Units
         if (memberUnits == 0) {
             return 0;                                                                       // If 0, return 0
@@ -249,21 +249,21 @@ contract Vether is ERC20 {
     //======================================EMISSION========================================//
     // Internal - Update emission function
     function _updateEmission() private {
-        uint _now = now;                                                                    // Find now()
+        uint256 _now = now;                                                                 // Find now()
         if (_now >= nextDayTime) {                                                          // If time passed the next Day time
             if (currentDay >= daysPerEra) {                                                 // If time passed the next Era time
-                currentEra += 1; currentDay = 0;                                             // Increment Era, reset Day
+                currentEra += 1; currentDay = 0;                                            // Increment Era, reset Day
                 nextEraTime = _now + (secondsPerDay * daysPerEra);                          // Set next Era time
                 registryAdded = false;
-                emission = getNextEraEmission();                                           // Get correct emission
-                mapEra_Emission[currentEra] = emission;                                      // Map emission to Era
+                emission = getNextEraEmission();                                            // Get correct emission
+                mapEra_Emission[currentEra] = emission;                                     // Map emission to Era
                 emit NewEra(currentEra, emission, nextEraTime);                             // Emit Event
             }
             currentDay += 1;                                                                // Increment Day
             nextDayTime = _now + secondsPerDay;                                             // Set next Day time
             emission = getDayEmission();                                                    // Check daily Dmission
-            mapEraDay_Emission[currentEra][currentDay] = emission;                           // Map emission to Day
-            mapEraDay_EmissionRemaining[currentEra][currentDay] = emission;                           // Map emission to Day
+            mapEraDay_Emission[currentEra][currentDay] = emission;                          // Map emission to Day
+            mapEraDay_EmissionRemaining[currentEra][currentDay] = emission;                 // Map emission to Day
             emit NewDay(currentEra, currentDay, nextDayTime);                               // Emit Event
         }
     }
