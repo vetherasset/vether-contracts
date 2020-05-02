@@ -46,13 +46,13 @@ address[2] public registryAddrArray; bool public registryAdded;
 uint256 public totalFees; uint256 public totalBurnt;
 
 // Public Mappings
-mapping(uint=>uint256) public mapEra_Emission;
-mapping(uint=>mapping(uint=>uint256)) public mapEraDay_Units;
-mapping(uint=>mapping(uint=>uint256)) public mapEraDay_UnitsRemaining;
-mapping(uint=>mapping(uint=>uint256)) public mapEraDay_Emission;
-mapping(uint=>mapping(uint=>uint256)) public mapEraDay_EmissionRemaining;
-mapping(uint=>mapping(uint=>mapping(address=>uint256))) public mapEraDay_MemberUnits;
-mapping(address=>mapping(uint=>uint[])) public mapMemberEra_Days; 
+mapping(uint256=>uint256) public mapEra_Emission;
+mapping(uint256=>mapping(uint256=>uint256)) public mapEraDay_Units;
+mapping(uint256=>mapping(uint256=>uint256)) public mapEraDay_UnitsRemaining;
+mapping(uint256=>mapping(uint256=>uint256)) public mapEraDay_Emission;
+mapping(uint256=>mapping(uint256=>uint256)) public mapEraDay_EmissionRemaining;
+mapping(uint256=>mapping(uint256=>mapping(address=>uint256))) public mapEraDay_MemberUnits;
+mapping(address=>mapping(uint256=>uint[])) public mapMemberEra_Days; 
 
 // Public Get Functions
 function getExchange(address token ) public view returns (address)

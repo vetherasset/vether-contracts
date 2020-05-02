@@ -35,13 +35,13 @@ contract Vether is ERC20 {
     address[2] public registryAddrArray; bool public registryAdded;
     uint256 public totalFees; uint256 public totalBurnt;
     // Public Mappings
-    mapping(uint=>uint256) public mapEra_Emission;                                           // Era->Emission
-    mapping(uint=>mapping(uint=>uint256)) public mapEraDay_Units;                            // Era,Days->Units
-    mapping(uint=>mapping(uint=>uint256)) public mapEraDay_UnitsRemaining;                   // Era,Days->TotalUnits
-    mapping(uint=>mapping(uint=>uint256)) public mapEraDay_Emission;                         // Era,Days->Emission
-    mapping(uint=>mapping(uint=>uint256)) public mapEraDay_EmissionRemaining;                // Era,Days->Emission
-    mapping(uint=>mapping(uint=>mapping(address=>uint256))) public mapEraDay_MemberUnits;    // Era,Days,Member->Units
-    mapping(address=>mapping(uint=>uint[])) public mapMemberEra_Days;                        // Member,Era->Days[]
+    mapping(uint256=>uint256) public mapEra_Emission;                                           // Era->Emission
+    mapping(uint256=>mapping(uint256=>uint256)) public mapEraDay_Units;                         // Era,Days->Units
+    mapping(uint256=>mapping(uint256=>uint256)) public mapEraDay_UnitsRemaining;                // Era,Days->TotalUnits
+    mapping(uint256=>mapping(uint256=>uint256)) public mapEraDay_Emission;                      // Era,Days->Emission
+    mapping(uint256=>mapping(uint256=>uint256)) public mapEraDay_EmissionRemaining;             // Era,Days->Emission
+    mapping(uint256=>mapping(uint256=>mapping(address=>uint256))) public mapEraDay_MemberUnits; // Era,Days,Member->Units
+    mapping(address=>mapping(uint256=>uint[])) public mapMemberEra_Days;                        // Member,Era->Days[]
     // Events
     event NewEra(uint256 era, uint256 emission, uint256 time);
     event NewDay(uint256 era, uint256 day, uint256 time);
