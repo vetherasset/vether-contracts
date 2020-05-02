@@ -2,11 +2,11 @@
 
 ## Smart Contract
 
-The Vether smart contracts implements the [vether whitepaper](https://bitcointalk.org/index.php?topic=5243406). 
+The Vether smart contracts implements the [Vether whitepaper](https://bitcointalk.org/index.php?topic=5243406) announced on 25 April 2020. 
 
 ### ERC-20
 Vether is an ERC-20 contract that implements the following interface:
-```javascript
+```Solidity
 interface ERC20 {
     function totalSupply() external view returns (uint256);
     function balanceOf(address account) external view returns (uint256);
@@ -22,7 +22,7 @@ interface ERC20 {
 ### UniSwap Factory and Exchange
 Vether uses the UniSwap Factory and Exchange contracts to enable swapping tokens for Ether at market prices:
 
-```javascript
+```Solidity
 // Uniswap Factory Interface
 interface UniswapFactory {
     function getExchange(address token) external view returns (address exchange);
