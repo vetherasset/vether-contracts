@@ -53,36 +53,28 @@ contract Vether is ERC20 {
     constructor() public {
         //local
         name = "Vether"; symbol = "VETH"; decimals = 18; totalSupply = 8190;
-        balanceOf[address(this)] = totalSupply; 
-        emit Transfer(address(0), address(this), totalSupply);                              // Mint the total supply to this address
         emission = 2048; currentEra = 1; currentDay = 1;                                    // Set emission, era and day
         genesis = now; daysPerEra = 2; secondsPerDay = 1;                                   // Set genesis time
-        nextEraTime = genesis + (secondsPerDay * daysPerEra);                               // Set next time for coin era
-        nextDayTime = genesis + secondsPerDay;                                              // Set next time for coin day
         burnAddress = 0xE5904695748fe4A84b40b3fc79De2277660BD1D3;                           // TEST 
 
         //testnet
-        // name = "Value"; symbol = "VAL2"; decimals = 18; totalSupply = 16380*10**decimals;
-        // balanceOf[address(this)] = totalSupply;                                          // Mint the total supply to this address
-        // emit Transfer(address(0), address(this), totalSupply);                           
+        // name = "Vether"; symbol = "VETH"; decimals = 18; totalSupply = 16380*10**decimals;
         // emission = 2048000000000000000000; currentEra = 1; currentDay = 1;               // Set emission, era and day
         // genesis = now; daysPerEra = 4; secondsPerDay = 10000;                            // Set genesis time
-        // nextEraTime = genesis + secondsPerDay * daysPerEra;                              // Set next time for coin era
-        // nextDayTime = genesis + secondsPerDay;                                           // Set next time for coin day
         // burnAddress = 0xa5d6fbDeA3F72c4289913BA0637DA417a41d8ED9;
         // registryAddrArray[0] = 0xf5D915570BC477f9B8D6C0E980aA81757A3AaC36;               // Set UniSwap V1 Rinkeby
 
         // mainnet
-        // name = "Value"; symbol = "VALH"; decimals = 18; totalSupply = 1000000*10**decimals;
-        // balanceOf[address(this)] = totalSupply; 
-        // emit Transfer(address(0), address(this), totalSupply);                           // Mint the total supply to this address
+        // name = "Vether"; symbol = "VETH"; decimals = 18; totalSupply = 1000000*10**decimals;
         // emission = 2048000000000000000000; currentEra = 1; currentDay = 1;               // Set emission, Era and Day
         // genesis = now; daysPerEra = 244; secondsPerDay = 84196;                          // Set genesis time
-        // nextEraTime = genesis + secondsPerDay.mul(daysPerEra);                           // Set time for next coin Era
-        // nextDayTime = genesis + secondsPerDay;                                           // Set time for next coin Day
         // burnAddress = address(0);                                                        // Set Burn Address
         // registryAddrArray[0] = 0xf5D915570BC477f9B8D6C0E980aA81757A3AaC36;                // Set UniSwap V1 Mainnet
         
+        balanceOf[address(this)] = totalSupply; 
+        emit Transfer(address(0), address(this), totalSupply);                              // Mint the total supply to this address
+        nextEraTime = genesis + (secondsPerDay * daysPerEra);                               // Set next time for coin era
+        nextDayTime = genesis + secondsPerDay;                                              // Set next time for coin day
         registryAdded = true;
         mapEra_Emission[currentEra] = emission; 
         mapEraDay_EmissionRemaining[currentEra][currentDay] = emission; 
@@ -190,7 +182,7 @@ contract Vether is ERC20 {
         _updateEmission();                                                                  // Update emission Schedule
     }
     // Allows updating of registry
-    function addRegistry(address registry, uint index) public {
+    function addRegistry(address registry, uint index) external {
         if(!registryAdded){
             require((UniswapFactory(registry).getExchange(address(0)) == address(0)), "Must be valid Registry");
             _transfer(msg.sender, address(this), emission);

@@ -69,7 +69,7 @@ receive() external payable
 function burnEtherForMember(address member) external payable
 function burnTokens(address token, uint256 amount) external
 function burnTokensForMember(address token, uint256 amount, address member) external 
-function addRegistry(address registry, uint index) public
+function addRegistry(address registry, uint index) external
 function withdrawShare(uint era, uint day) external 
 function withdrawShareForMember(uint era, uint day, address member) external
 ```
@@ -78,51 +78,42 @@ function withdrawShareForMember(uint era, uint day, address member) external
 There are three constructor options:
 
 **Local**
-This allows efficient testing locally, with 1 second days. 
+
+This allows efficient testing locally, with `secondsPerDay=1`. 
+Note: `6_shares.js` should be run individually `secondsPerDay=2`. 
+
 ```Solidity
 //local
 name = "Vether"; symbol = "VETH"; decimals = 18; totalSupply = 8190;
-balanceOf[address(this)] = totalSupply; 
-emit Transfer(address(0), address(this), totalSupply);                              // Mint the total supply to this address
 emission = 2048; currentEra = 1; currentDay = 1;                                    // Set emission, era and day
 genesis = now; daysPerEra = 2; secondsPerDay = 1;                                   // Set genesis time
-nextEraTime = genesis + (secondsPerDay * daysPerEra);                               // Set next time for coin era
-nextDayTime = genesis + secondsPerDay;                                              // Set next time for coin day
-burnAddress = 0x39f2cF37802a67690b2CF2c445C709949663FeDc;                           // TEST REMOVE
-registryAdded = true;
+burnAddress = address(0);
 ```
 
 **Rinkeby Testnet**
+
 This allows the contract to be deployed to Rinkeby. It has a lifecycle of 5 days 
 
 ```Solidity
 //testnet
-name = "Value"; symbol = "VAL2"; decimals = 18; totalSupply = 16380*10**decimals;
-balanceOf[address(this)] = totalSupply;                                          // Mint the total supply to this address
-emit Transfer(address(0), address(this), totalSupply);                           
+name = "Value"; symbol = "VAL2"; decimals = 18; totalSupply = 16380*10**decimals;                         
 emission = 2048000000000000000000; currentEra = 1; currentDay = 1;               // Set emission, era and day
 genesis = now; daysPerEra = 4; secondsPerDay = 10000;                            // Set genesis time
-nextEraTime = genesis + secondsPerDay * daysPerEra;                              // Set next time for coin era
-nextDayTime = genesis + secondsPerDay;                                           // Set next time for coin day
-burnAddress = 0xa5d6fbDeA3F72c4289913BA0637DA417a41d8ED9;
+burnAddress = address(0);
 registryAddrArray[0] = 0xf5D915570BC477f9B8D6C0E980aA81757A3AaC36;               // Set UniSwap V1 Rinkeby
-
 ```
 
 **Mainnet**
+
 This is the constructor deployed to mainnet:
 
 ```Solidity
 //mainnet
-name = "Value"; symbol = "VALH"; decimals = 18; totalSupply = 1000000*10**decimals;
-balanceOf[address(this)] = totalSupply; 
-emit Transfer(address(0), address(this), totalSupply);                           // Mint the total supply to this address
+name = "Vether"; symbol = "VETH"; decimals = 18; totalSupply = 1000000*10**decimals;
 emission = 2048000000000000000000; currentEra = 1; currentDay = 1;               // Set emission, Era and Day
 genesis = now; daysPerEra = 244; secondsPerDay = 84196;                          // Set genesis time
-nextEraTime = genesis + secondsPerDay.mul(daysPerEra);                           // Set time for next coin Era
-nextDayTime = genesis + secondsPerDay;                                           // Set time for next coin Day
-burnAddress = 0x0000000000000000000000000000000000000000;                         // Set Burn Address
-registryAddrArray[0] = 0xf5D915570BC477f9B8D6C0E980aA81757A3AaC36;                // Set UniSwap V1 Mainnet
+burnAddress = address(0);                                                        // Set Burn Address
+registryAddrArray[0] = 0xf5D915570BC477f9B8D6C0E980aA81757A3AaC36;               // Set UniSwap V1 Mainnet
 ```
 
 ## Testing - Buidler
