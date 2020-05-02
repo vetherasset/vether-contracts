@@ -35,7 +35,7 @@ interface UniswapExchange {
 
 ### Vether Public Get Methods
 The following public getters are available to query:
-```javascript
+```Solidity
 // Public Parameters
 uint256 public emission;
 uint public currentEra; uint public currentDay;
@@ -64,7 +64,7 @@ function getDayEmission() public view returns (uint256)
 
 ### Vether Public Transactions
 The following public transaction functions are available to call:
-```javascript
+```Solidity
 receive() external payable
 function burnEtherForMember(address member) external payable
 function burnTokens(address token, uint256 amount) external
@@ -79,7 +79,7 @@ There are three constructor options:
 
 **Local**
 This allows efficient testing locally, with 1 second days. 
-```javascript
+```Solidity
 //local
 name = "Vether"; symbol = "VETH"; decimals = 18; totalSupply = 8190;
 balanceOf[address(this)] = totalSupply; 
@@ -95,7 +95,7 @@ registryAdded = true;
 **Rinkeby Testnet**
 This allows the contract to be deployed to Rinkeby. It has a lifecycle of 5 days 
 
-```
+```Solidity
 //testnet
 name = "Value"; symbol = "VAL2"; decimals = 18; totalSupply = 16380*10**decimals;
 balanceOf[address(this)] = totalSupply;                                          // Mint the total supply to this address
@@ -112,7 +112,7 @@ registryAddrArray[0] = 0xf5D915570BC477f9B8D6C0E980aA81757A3AaC36;              
 **Mainnet**
 This is the constructor deployed to mainnet:
 
-```
+```Solidity
 //mainnet
 name = "Value"; symbol = "VALH"; decimals = 18; totalSupply = 1000000*10**decimals;
 balanceOf[address(this)] = totalSupply; 
@@ -125,9 +125,27 @@ burnAddress = 0x0000000000000000000000000000000000000000;                       
 registryAddrArray[0] = 0xf5D915570BC477f9B8D6C0E980aA81757A3AaC36;                // Set UniSwap V1 Mainnet
 ```
 
-## Testing
+## Testing - Buidler
 
-The test suite implements 6 routines that can be tested individually. The 
+The test suite uses [Buidler](https://buidler.dev/) as the preferred testing suite, since it compiles and tests faster. 
+The test suite implements 7 routines that can be tested individually.
+
+```
+npx buidler compile
+```
+
+Execute all at once:
+```
+npx builder test
+```
+
+Or execute individually:
+```
+npx builder test/1_coin.js
+```
+
+## Testing - Truffle
+ Truffle testing can also be done:
 
 ```
 truffle compile && truffle migrate --reset
