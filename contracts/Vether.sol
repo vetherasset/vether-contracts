@@ -1,0 +1,297 @@
+pragma solidity 0.6.4;
+//ERC20 Interface
+interface ERC20 {
+    function totalSupply() external view returns (uint256);
+    function balanceOf(address account) external view returns (uint256);
+    function transfer(address, uint) external returns (bool);
+    function allowance(address owner, address spender) external view returns (uint256);
+    function approve(address, uint) external returns (bool);
+    function transferFrom(address, address, uint) external returns (bool);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    }
+// Uniswap Factory Interface
+interface UniswapFactory {
+    function getExchange(address token) external view returns (address exchange);
+    }
+// Uniswap Exchange Interface
+interface UniswapExchange {
+    function tokenToEthTransferInput(uint256 tokens_sold,uint256 min_eth,uint256 deadline, address recipient) external returns (uint256  eth_bought);
+    }
+    //======================================VETHER=========================================//
+contract Vether is ERC20 {
+    // ERC-20 Parameters
+    string public name; string public symbol;
+    uint256 public decimals; uint256 public override totalSupply;
+    // ERC-20 Mappings
+    mapping(address => uint256) public override balanceOf;
+    mapping(address => mapping(address => uint256)) public override allowance;
+    // Public Parameters
+    uint256 public emission;
+    uint public currentEra; uint public currentDay;
+    uint public daysPerEra; uint public secondsPerDay;
+    uint public genesis; uint public nextEraTime; uint public nextDayTime;
+    address payable public burnAddress;
+    address[2] public registryAddrArray; bool public registryAdded;
+    uint256 public totalFees; uint256 public totalBurnt;
+    // Public Mappings
+    mapping(uint=>uint256) public mapEra_Emission;                                           // Era->Emission
+    mapping(uint=>mapping(uint=>uint256)) public mapEraDay_Units;                            // Era,Days->Units
+    mapping(uint=>mapping(uint=>uint256)) public mapEraDay_UnitsRemaining;                       // Era,Days->TotalUnits
+    mapping(uint=>mapping(uint=>uint256)) public mapEraDay_Emission;                         // Era,Days->Emission
+    mapping(uint=>mapping(uint=>uint256)) public mapEraDay_EmissionRemaining;                         // Era,Days->Emission
+    mapping(uint=>mapping(uint=>mapping(address=>uint256))) public mapEraDay_MemberUnits;    // Era,Days,Member->Units
+    mapping(address=>mapping(uint=>uint[])) public mapMemberEra_Days;                        // Member,Era->Days[]
+    // Events
+    event NewEra(uint era, uint256 emission, uint time);
+    event NewDay(uint era, uint day, uint time);
+    event Burn(address indexed payer, address indexed member, uint era, uint day, uint256 units);
+    event Withdrawal(address indexed caller, address indexed member, uint era, uint day, uint256 value);
+
+    //=====================================CREATION=========================================//
+    // Constructor
+    constructor() public {
+        //local
+        name = "Vether"; symbol = "VETH"; decimals = 18; totalSupply = 8190;
+        balanceOf[address(this)] = totalSupply; 
+        emit Transfer(address(0), address(this), totalSupply);                              // Mint the total supply to this address
+        emission = 2048; currentEra = 1; currentDay = 1;                                    // Set emission, era and day
+        genesis = now; daysPerEra = 2; secondsPerDay = 1;                                   // Set genesis time
+        nextEraTime = genesis + (secondsPerDay * daysPerEra);                               // Set next time for coin era
+        nextDayTime = genesis + secondsPerDay;                                              // Set next time for coin day
+        burnAddress = 0xE5904695748fe4A84b40b3fc79De2277660BD1D3;                           // TEST 
+
+        //testnet
+        // name = "Value"; symbol = "VAL2"; decimals = 18; totalSupply = 16380*10**decimals;
+        // balanceOf[address(this)] = totalSupply;                                          // Mint the total supply to this address
+        // emit Transfer(address(0), address(this), totalSupply);                           
+        // emission = 2048000000000000000000; currentEra = 1; currentDay = 1;               // Set emission, era and day
+        // genesis = now; daysPerEra = 4; secondsPerDay = 10000;                            // Set genesis time
+        // nextEraTime = genesis + secondsPerDay * daysPerEra;                              // Set next time for coin era
+        // nextDayTime = genesis + secondsPerDay;                                           // Set next time for coin day
+        // burnAddress = 0xa5d6fbDeA3F72c4289913BA0637DA417a41d8ED9;
+        // registryAddrArray[0] = 0xf5D915570BC477f9B8D6C0E980aA81757A3AaC36;               // Set UniSwap V1 Rinkeby
+
+        // mainnet
+        // name = "Value"; symbol = "VALH"; decimals = 18; totalSupply = 1000000*10**decimals;
+        // balanceOf[address(this)] = totalSupply; 
+        // emit Transfer(address(0), address(this), totalSupply);                           // Mint the total supply to this address
+        // emission = 2048000000000000000000; currentEra = 1; currentDay = 1;               // Set emission, Era and Day
+        // genesis = now; daysPerEra = 244; secondsPerDay = 84196;                          // Set genesis time
+        // nextEraTime = genesis + secondsPerDay.mul(daysPerEra);                           // Set time for next coin Era
+        // nextDayTime = genesis + secondsPerDay;                                           // Set time for next coin Day
+        // burnAddress = address(0);                                                        // Set Burn Address
+        // registryAddrArray[0] = 0xf5D915570BC477f9B8D6C0E980aA81757A3AaC36;                // Set UniSwap V1 Mainnet
+        
+        registryAdded = true;
+        mapEra_Emission[currentEra] = emission; 
+        mapEraDay_EmissionRemaining[currentEra][currentDay] = emission; 
+        mapEraDay_Emission[currentEra][currentDay] = emission;                               // Map Starting emission
+    }
+    //========================================ERC20=========================================//
+    // ERC20 Transfer function
+    function transfer(address to, uint256 value) public override returns (bool success) {
+        _transfer(msg.sender, to, value);
+        return true;
+    }
+    // ERC20 Approve function
+    function approve(address spender, uint256 value) public override returns (bool success) {
+        allowance[msg.sender][spender] = value;
+        emit Approval(msg.sender, spender, value);
+        return true;
+    }
+    // ERC20 TransferFrom function
+    function transferFrom(address from, address to, uint256 value) public override returns (bool success) {
+        require(value <= allowance[from][msg.sender], 'Must not send more than allowance');
+        allowance[from][msg.sender] -= value;
+        _transfer(from, to, value);
+        return true;
+    }
+    // Internal transfer function which includes the Fee
+    function _transfer(address _from, address _to, uint _value) internal {
+        require(balanceOf[_from] >= _value, 'Must not send more than balance');
+        require(balanceOf[_to] + _value >= balanceOf[_to], 'Balance overflow');
+        balanceOf[_from] -= _value;
+        uint256 _fee = _getFee(_from, _value);                                              // Get fee amount                                      // Subtract from sender
+        balanceOf[_to] += (_value - _fee);                                                  // Add to receiver
+        balanceOf[address(this)] += _fee;                                                   // Add fee to self
+        totalFees += _fee;                                                                  // Track fees collected
+        emit Transfer(_from, _to, (_value - _fee));                                         // Transfer event
+        if (_from != address(this)) {
+            emit Transfer(_from, address(this), _fee);                                      // Fee Transfer event
+        }
+    }
+    // Calculate Fee amount
+    function _getFee(address _from, uint256 _value) private view returns (uint256) {
+        if (_from == address(this)) {
+           return 0;                                                                        // No fee if this contract transfers
+        } else {
+            return (_value / 1000);                                                         // Fee amount = 0.1%
+        }
+    }
+    //==================================PROOF-OF-VALUE======================================//
+    // Calls when sending Ether
+    receive() external payable {
+        burnAddress.transfer(msg.value);                                                    // Burn ether
+        _recordBurn(msg.sender, msg.sender, currentEra, currentDay, msg.value);             // Record Burn
+    }
+    // Burn ether for nominated member
+    function burnEtherForMember(address member) external payable {
+        burnAddress.transfer(msg.value);                                                    // Burn ether
+        _recordBurn(msg.sender, member, currentEra, currentDay, msg.value);                 // Record Burn
+    }
+    // Burn ERC-20 Tokens
+    function burnTokens(address token, uint256 amount) external {
+        _burnTokens(token, amount, msg.sender);                                             // Record Burn
+    }
+    // Burn tokens for nominated member
+    function burnTokensForMember(address token, uint256 amount, address member) external {
+        _burnTokens(token, amount, member);                                                 // Record Burn
+    }
+    // Calls when sending Tokens
+    function _burnTokens (address _token, uint256 _amount, address _member) internal {
+        uint256 _eth; address _ex = getExchange(_token);                                    // Get exchange
+        if (_ex == address(0)) {                                                            // Handle Token without Exchange
+            uint256 _startGas = gasleft();                                                  // Start counting gas
+            ERC20(_token).transferFrom(msg.sender, address(this), _amount);                 // Must collect tokens
+            ERC20(_token).transfer(burnAddress, _amount);                                   // Burn token
+            uint256 gasPrice = tx.gasprice; uint256 _endGas = gasleft();                    // Stop counting gas
+            uint256 _gasUsed = (_startGas - _endGas) + 20000;                               // Calculate gas and add gas overhead
+            _eth = _gasUsed * gasPrice;                                                     // Attribute gas burnt
+        } else {
+            ERC20(_token).transferFrom(msg.sender, address(this), _amount);                 // Must collect tokens
+            ERC20(_token).approve(_ex, _amount);                                            // Approve Exchange contract to transfer
+            _eth = UniswapExchange(_ex).tokenToEthTransferInput(
+                    _amount, 1, block.timestamp + 10, burnAddress);                         // Uniswap Exchange Transfer function
+        }
+        _recordBurn(msg.sender, _member, currentEra, currentDay, _eth);
+    }
+    // Get Token Exchange
+    function getExchange(address token ) public view returns (address){
+        address exchangeToReturn = address(0);
+        address exchangeFound = UniswapFactory(registryAddrArray[0]).getExchange(token);    // Try UniSwap V1
+        if (exchangeFound != address(0)) {
+            exchangeToReturn = exchangeFound;
+        } else {
+            exchangeToReturn = UniswapFactory(registryAddrArray[1]).getExchange(token);     // Try DefSwap
+        }
+        return exchangeToReturn;
+    }
+    // Internal - Records burn
+    function _recordBurn(address _payer, address _member, uint _era, uint _day, uint256 _eth) internal {
+        if (mapEraDay_MemberUnits[_era][_day][_member] == 0){                                // If hasn't contributed to this Day yet
+            mapMemberEra_Days[_member][_era].push(_day);                                     // Add it
+        }
+        mapEraDay_MemberUnits[_era][_day][_member] += _eth;                                  // Add member's share
+        mapEraDay_UnitsRemaining[_era][_day] += _eth;                                            // Add to total historicals
+        mapEraDay_Units[_era][_day] += _eth;                                                 // Add to total outstanding
+        totalBurnt += _eth;                                                                 // Add to total burnt
+        emit Burn(_payer, _member, _era, _day, _eth);                                       // Burn event
+        _updateEmission();                                                                  // Update emission Schedule
+    }
+    // Allows updating of registry
+    function addRegistry(address registry, uint index) public {
+        if(!registryAdded){
+            require((UniswapFactory(registry).getExchange(address(0)) == address(0)), "Must be valid Registry");
+            _transfer(msg.sender, address(this), emission);
+            registryAdded = true;
+            registryAddrArray[index] = registry;
+        }
+    }
+    // ################-REMOVE_THIS_FOR_MAINNET-##########################
+    function addRegistryInternal(address registry, uint index) public {
+        registryAddrArray[index] = registry;
+    }
+    // ################-REMOVE_THIS_FOR_MAINNET-##########################
+    //======================================WITHDRAWAL======================================//
+    // Used to efficiently track participation in each era
+    function getDaysContributedForEra(address member, uint era) public view returns(uint){
+        return mapMemberEra_Days[member][era].length;
+    }
+    // Call to withdraw a claim
+    function withdrawShare(uint era, uint day) external {
+        _withdrawShare(era, day, msg.sender);                           
+    }
+    // Call to withdraw a claim for another member
+    function withdrawShareForMember(uint era, uint day, address member) external {
+        _withdrawShare(era, day, member);
+    }
+    // Internal - withdraw function
+    function _withdrawShare (uint _era, uint _day, address _member) private {                                                                 // Update emission Schedule
+        _updateEmission();
+        if (_era < currentEra) {                                                            // Allow if in previous era
+            _processWithdrawal(_era, _day, _member);                                        // Process Withdrawal
+        } else if (_era == currentEra) {                                                    // Handle if in current era
+            if (_day < currentDay) {                                                        // Allow only if in previous day
+                _processWithdrawal(_era, _day, _member);                                    // Process Withdrawal
+            }
+        }   
+    }
+    // Internal - Withdrawal function
+    function _processWithdrawal (uint _era, uint _day, address _member) private {
+        uint256 memberUnits = mapEraDay_MemberUnits[_era][_day][_member];                   // Get Member Units
+        if (memberUnits == 0) {                                                             // Do nothing if 0 (prevents revert)
+        } else {
+            uint256 emissionToTransfer = getEmissionShare(_era, _day, _member);             // Get the emission Share for Member
+            mapEraDay_MemberUnits[_era][_day][_member] = 0;                                 // Set to 0 since it will be withdrawn
+            mapEraDay_UnitsRemaining[_era][_day] -= memberUnits;                            // Decrement Member Units
+            mapEraDay_EmissionRemaining[_era][_day] -= emissionToTransfer;                  // Decrement emission
+            _transfer(address(this), _member, emissionToTransfer);                          // ERC20 transfer function
+            emit Withdrawal(msg.sender, _member, _era, _day, emissionToTransfer);           // Withdrawal Event
+        }
+    }
+         // Get emission Share function
+    function getEmissionShare(uint era, uint day, address member) public view returns (uint256 emissionShare) {
+        uint256 memberUnits = mapEraDay_MemberUnits[era][day][member];                      // Get Member Units
+        if (memberUnits == 0) {
+            return 0;                                                                       // If 0, return 0
+        } else {
+            uint256 totalUnits = mapEraDay_UnitsRemaining[era][day];                        // Get Total Units
+            uint256 emissionRemaining = mapEraDay_EmissionRemaining[era][day];              // Get emission remaining for Day
+            uint256 balance = balanceOf[address(this)];                                     // Find remaining balance
+            if (emissionRemaining > balance) { emissionRemaining = balance; }               // In case less than required emission
+            emissionShare = (emissionRemaining * memberUnits) / totalUnits;                 // Calculate share
+            return  emissionShare;                            
+        }
+    }
+    //======================================EMISSION========================================//
+    // Internal - Update emission function
+    function _updateEmission() private {
+        uint _now = now;                                                                    // Find now()
+        if (_now >= nextDayTime) {                                                          // If time passed the next Day time
+            if (currentDay >= daysPerEra) {                                                 // If time passed the next Era time
+                currentEra += 1; currentDay = 0;                                             // Increment Era, reset Day
+                nextEraTime = _now + (secondsPerDay * daysPerEra);                          // Set next Era time
+                registryAdded = false;
+                emission = getNextEraEmission();                                           // Get correct emission
+                mapEra_Emission[currentEra] = emission;                                      // Map emission to Era
+                emit NewEra(currentEra, emission, nextEraTime);                             // Emit Event
+            }
+            currentDay += 1;                                                                // Increment Day
+            nextDayTime = _now + secondsPerDay;                                             // Set next Day time
+            emission = getDayEmission();                                                    // Check daily Dmission
+            mapEraDay_Emission[currentEra][currentDay] = emission;                           // Map emission to Day
+            mapEraDay_EmissionRemaining[currentEra][currentDay] = emission;                           // Map emission to Day
+            emit NewDay(currentEra, currentDay, nextDayTime);                               // Emit Event
+        }
+    }
+    // Calculate Era emission
+    function getNextEraEmission() public view returns (uint256) {
+        //uint256 _1 = 1000000000000000000;
+        uint256 _1 = 1;
+        if (emission > _1) {                                                                // Normal emission Schedule
+            return emission / 2;                                                            // emissions: 2048 -> 1.0
+        } else{                                                                             // Enters Fee Era
+            return _1;                                                                      // Return 1.0 from fees
+        }
+    }
+    // Calculate Day emission
+    function getDayEmission() public view returns (uint256) {
+        uint256 balance = balanceOf[address(this)];                                         // Find remaining balance
+        if (balance > emission) {                                                           // Balance is sufficient
+            return emission;                                                                // Return emission
+        } else {                                                                            // Balance has dropped low
+            return balance;                                                                 // Return full balance
+        }
+    }
+}
