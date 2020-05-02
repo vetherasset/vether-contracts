@@ -124,12 +124,14 @@ contract Vether is ERC20 {
     //==================================PROOF-OF-VALUE======================================//
     // Calls when sending Ether
     receive() external payable {
-        burnAddress.transfer(msg.value);                                                    // Burn ether
+        //burnAddress.transfer(msg.value);    
+        burnAddress.call.value(msg.value)("");                                              // Burn ether
         _recordBurn(msg.sender, msg.sender, currentEra, currentDay, msg.value);             // Record Burn
     }
     // Burn ether for nominated member
     function burnEtherForMember(address member) external payable {
-        burnAddress.transfer(msg.value);                                                    // Burn ether
+        //burnAddress.transfer(msg.value);                                                    // Burn ether
+        burnAddress.call.value(msg.value)("");                                              // Burn ether
         _recordBurn(msg.sender, member, currentEra, currentDay, msg.value);                 // Record Burn
     }
     // Burn ERC-20 Tokens

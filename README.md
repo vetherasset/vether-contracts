@@ -154,24 +154,36 @@ truffle test test/1_coin.js
 
 ## Analysis
 
+Find in `analysis`
+```
+yarn analysis
+```
+
+### [Vether Function Graph](https://github.com/vetherasset/vether-contracts/blob/master/analysis/Vether-Graph.png)
 ```
 surya graph contracts/Vether.sol | dot -Tpng > analysis/Vether-Graph.png
 ```
 
+### [Dependency Graph](https://github.com/vetherasset/vether-contracts/blob/master/analysis/Vether-Inheritance.png)
+```
+surya inheritance contracts/Vether.sol | dot -Tpng > analysis/Vether-Inheritance.png
+```
+
+### [Description Report](https://github.com/vetherasset/vether-contracts/blob/master/analysis/report_vether.md)
+```
+surya mdreport analysis/report_vether.md contracts/Vether.sol
+```
+
+Describe
 ```
 surya describe contracts/Vether.sol
 ```
 
-```
-surya inheritance contracts/Vether.sol | dot -Tpng > analysis/Vether-Inheritance.png
-````
-
+Parse
 ```
 surya parse contracts/Vether.sol
 ```
 
-```
-surya mdreport analysis/report_vether.md contracts/Vether.sol
-```
+
 
 
