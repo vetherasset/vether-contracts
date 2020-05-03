@@ -24,12 +24,12 @@ contract("Vether", function(accounts) {
   sendEther(acc0)
   withdraws(acc0)
   testTransferFrom(acc0, acc1)
-  addRegistryFail(acc0)
-  addRegistry(acc0)
-  addExcludedFail(acc1)
-  sendEther(acc0)
-  withdraws(acc0)
+  // addRegistryFail(acc0)
+  // addRegistry(acc0)
+  // sendEther(acc0)
+  // withdraws(acc0)
   addExcluded(acc0)
+  addExcludedFail(acc1)
 })
 
 function constructor(accounts) {
@@ -102,48 +102,38 @@ function testTransferFrom(_acc, _spender) {
     })
   }
 
-  function addRegistryFail(_acc) {
-    it('Add Incorrect Registry', async () => {
-        let r3 = await coin.addRegistryInternal(regAddress1, 0, { from: _acc })
-        let r1 = await coin.approve(coinAddress, "513", { from: _acc })
-        let rx = await TruffleAssert.reverts(coin.addRegistry(acc1, 0, { from: _acc }))
-    })
-    it('Add Incorrect Index', async () => {
-      let r3 = await coin.addRegistryInternal(regAddress1, 0, { from: _acc })
-      let r1 = await coin.approve(coinAddress, "513", { from: _acc })
-      let rx = await TruffleAssert.reverts(coin.addRegistry(regAddress1, 3, { from: _acc }))
-  })
-  }
+function addExcluded(_acc) {
+  it('Add Excluded Pass', async () => {
 
-function addRegistry(_acc) {
-  it('Add Registry', async () => {
-
-    let balBN = new BigNumber(await coin.balanceOf(_acc))
-    //console.log('User Balance: ', balBN.toFixed())
-
-    let r3 = await coin.addRegistryInternal(regAddress1, 0, { from: _acc })
-    let registryAddrStart = await coin.registryAddrArray.call(0)
-    //console.log(registryAddrStart)
-
-    let era = (new BigNumber(await coin.currentEra.call())).toFixed()
-    //console.log("lastest Era:", era)
-    let r1 = await coin.approve(coinAddress, "513", { from: _acc })
-    let approval = BN2Str(await coin.allowance.call(_acc, coinAddress))
-    //console.log('approval', approval)
     let lockMutable = await coin.lockMutable.call()
     //console.log('registryAdded', lockMutable)
-    let emission = BN2Str(await coin.emission.call())
-    //console.log('emission', emission)
-    let rx = await coin.addRegistry(regAddress2, 0, { from: _acc })
 
-    let balBN2 = new BigNumber(await coin.balanceOf(_acc))
-    //console.log('User Balance: ', balBN2.toFixed())
-    assert.equal(balBN2, balBN - emission, "correct final balance")
+    let r1 = await coin.approve(_acc, "513", { from: _acc })
+    let rx = await coin.addExcluded(_acc, { from: _acc })
+    let lockMutable2 = await coin.lockMutable.call()
+    //console.log('registryAdded', lockMutable2)
 
-    let registryAddrFinal = await coin.registryAddrArray.call(0)
-    //console.log(registryAddrFinal)
-    assert.equal(registryAddrFinal, regAddress2, "correct address")
+    let acc0Bal1 = await coin.balanceOf(acc0);
+    let acc1Bal1 = await coin.balanceOf(acc1);
+    let coinBal1 = await coin.balanceOf(coinAddress);  
+    //console.log("Account0 New Balance: ", acc0Bal1.toNumber()); console.log("Account1 New Balance: ", acc1Bal1.toNumber());
+    //console.log("Coin Balance Start:", coinBal1.toNumber());
+    assert.equal(acc0Bal1.toNumber(), "2972", "correct acc0 balance")
+    assert.equal(acc1Bal1.toNumber(), "100", "correct acc1 balance")
+    assert.equal(coinBal1.toNumber(), "5118", "correct coin balance")
+
+    let r = await coin.transfer(acc1, 1000, { from: acc0 })
+
+    let acc0Bal2 = await coin.balanceOf(acc0);
+    let acc1Bal2 = await coin.balanceOf(acc1);
+    let coinBal2 = await coin.balanceOf(coinAddress);
+    //console.log("Account0 New Balance: ", acc0Bal2.toNumber()); console.log("Account1 New Balance: ", acc1Bal2.toNumber());
+    //console.log("Coin Balance End:", coinBal2.toNumber());
+    assert.equal(acc0Bal2.toNumber(), "1972", "correct acc0 balance")
+    assert.equal(acc1Bal2.toNumber(), "1100", "correct acc1 balance")
+    assert.equal(coinBal2.toNumber(), "5118", "correct acc1 balance")
   })
+
 }
 
 function addExcludedFail(_acc) {
@@ -161,9 +151,9 @@ function addExcludedFail(_acc) {
     let coinBal1 = await coin.balanceOf(coinAddress);  
     // console.log("Account0 New Balance: ", acc0Bal1.toNumber()); console.log("Account1 New Balance: ", acc1Bal1.toNumber());
     // console.log("Coin Balance Start:", coinBal1.toNumber());
-    assert.equal(acc0Bal1.toNumber(), "3484", "correct acc0 balance")
-    assert.equal(acc1Bal1.toNumber(), "100", "correct acc1 balance")
-    assert.equal(coinBal1.toNumber(), "4606", "correct coin balance")
+    assert.equal(acc0Bal1.toNumber(), "1972", "correct acc0 balance")
+    assert.equal(acc1Bal1.toNumber(), "1100", "correct acc1 balance")
+    assert.equal(coinBal1.toNumber(), "5118", "correct coin balance")
 
     let r = await coin.transfer(acc1, 1000, { from: acc0 })
 
@@ -172,43 +162,52 @@ function addExcludedFail(_acc) {
     let coinBal2 = await coin.balanceOf(coinAddress);
     // console.log("Account0 New Balance: ", acc0Bal2.toNumber()); console.log("Account1 New Balance: ", acc1Bal2.toNumber());
     // console.log("Coin Balance End:", coinBal2.toNumber());
-    assert.equal(acc0Bal2.toNumber(), "2484", "correct acc0 balance")
-    assert.equal(acc1Bal2.toNumber(), "1099", "correct acc1 balance")
-    assert.equal(coinBal2.toNumber(), "4607", "correct acc1 balance")
+    assert.equal(acc0Bal2.toNumber(), "972", "correct acc0 balance")
+    assert.equal(acc1Bal2.toNumber(), "2100", "correct acc1 balance")
+    assert.equal(coinBal2.toNumber(), "5118", "correct acc1 balance")
   })
 }
 
-function addExcluded(_acc) {
-  it('Add Excluded Pass', async () => {
-
-    let lockMutable = await coin.lockMutable.call()
-    //console.log('registryAdded', lockMutable)
-
-    let r1 = await coin.approve(_acc, "513", { from: _acc })
-    let rx = await coin.addExcluded(_acc, { from: _acc })
-    let lockMutable2 = await coin.lockMutable.call()
-    //console.log('registryAdded', lockMutable2)
-
-    let acc0Bal1 = await coin.balanceOf(acc0);
-    let acc1Bal1 = await coin.balanceOf(acc1);
-    let coinBal1 = await coin.balanceOf(coinAddress);  
-    //console.log("Account0 New Balance: ", acc0Bal1.toNumber()); console.log("Account1 New Balance: ", acc1Bal1.toNumber());
-    //console.log("Coin Balance Start:", coinBal1.toNumber());
-    assert.equal(acc0Bal1.toNumber(), "2420", "correct acc0 balance")
-    assert.equal(acc1Bal1.toNumber(), "1099", "correct acc1 balance")
-    assert.equal(coinBal1.toNumber(), "4671", "correct coin balance")
-
-    let r = await coin.transfer(acc1, 1000, { from: acc0 })
-
-    let acc0Bal2 = await coin.balanceOf(acc0);
-    let acc1Bal2 = await coin.balanceOf(acc1);
-    let coinBal2 = await coin.balanceOf(coinAddress);
-    //console.log("Account0 New Balance: ", acc0Bal2.toNumber()); console.log("Account1 New Balance: ", acc1Bal2.toNumber());
-    //console.log("Coin Balance End:", coinBal2.toNumber());
-    assert.equal(acc0Bal2.toNumber(), "1420", "correct acc0 balance")
-    assert.equal(acc1Bal2.toNumber(), "2099", "correct acc1 balance")
-    assert.equal(coinBal2.toNumber(), "4671", "correct acc1 balance")
+function addRegistryFail(_acc) {
+  it('Add Incorrect Registry', async () => {
+      let r3 = await coin.addRegistryInternal(regAddress1, 0, { from: _acc })
+      let r1 = await coin.approve(coinAddress, "513", { from: _acc })
+      let rx = await TruffleAssert.reverts(coin.addRegistry(acc1, 0, { from: _acc }))
   })
-
+  it('Add Incorrect Index', async () => {
+    let r3 = await coin.addRegistryInternal(regAddress1, 0, { from: _acc })
+    let r1 = await coin.approve(coinAddress, "513", { from: _acc })
+    let rx = await TruffleAssert.reverts(coin.addRegistry(regAddress1, 3, { from: _acc }))
+})
 }
 
+function addRegistry(_acc) {
+it('Add Registry', async () => {
+
+  let balBN = new BigNumber(await coin.balanceOf(_acc))
+  //console.log('User Balance: ', balBN.toFixed())
+
+  let r3 = await coin.addRegistryInternal(regAddress1, 0, { from: _acc })
+  let registryAddrStart = await coin.registryAddrArray.call(0)
+  //console.log(registryAddrStart)
+
+  let era = (new BigNumber(await coin.currentEra.call())).toFixed()
+  //console.log("lastest Era:", era)
+  let r1 = await coin.approve(coinAddress, "513", { from: _acc })
+  let approval = BN2Str(await coin.allowance.call(_acc, coinAddress))
+  //console.log('approval', approval)
+  let lockMutable = await coin.lockMutable.call()
+  //console.log('registryAdded', lockMutable)
+  let emission = BN2Str(await coin.emission.call())
+  //console.log('emission', emission)
+  let rx = await coin.addRegistry(regAddress2, 0, { from: _acc })
+
+  let balBN2 = new BigNumber(await coin.balanceOf(_acc))
+  //console.log('User Balance: ', balBN2.toFixed())
+  assert.equal(balBN2, balBN - emission, "correct final balance")
+
+  let registryAddrFinal = await coin.registryAddrArray.call(0)
+  //console.log(registryAddrFinal)
+  assert.equal(registryAddrFinal, regAddress2, "correct address")
+})
+}

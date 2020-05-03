@@ -81,6 +81,12 @@ contract Vether is ERC20 {
         mapEraDay_EmissionRemaining[currentEra][currentDay] = emission; 
         mapEraDay_Emission[currentEra][currentDay] = emission;                               // Map Starting emission
     }
+    // ################-REMOVE_THIS_FOR_MAINNET-##########################
+    // Allows testing. Remove for mainnet
+    function addRegistryInternal(address registry, uint256 index) public {
+        registryAddrArray[index] = registry;
+    }
+    // ################-REMOVE_THIS_FOR_MAINNET-##########################
     //========================================ERC20=========================================//
     // ERC20 Transfer function
     function transfer(address to, uint256 value) public override returns (bool success) {
@@ -184,28 +190,23 @@ contract Vether is ERC20 {
         emit Burn(_payer, _member, _era, _day, _eth);                                       // Burn event
         _updateEmission();                                                                  // Update emission Schedule
     }
-    // Allows updating of registry, once per Era
-    function addRegistry(address registry, uint256 index) external {
-        if(!lockMutable){                                                               // Rate limiting
-            require((UniswapFactory(registry).getExchange(address(0)) == address(0)), "Must be valid Registry");
-            _transfer(msg.sender, address(this), emission);                             // Pay fee
-            lockMutable = true;                                                         // Lock contract for another Era
-            registryAddrArray[index] = registry;                                    // Add desired address
-        }
-    }
+    // // Allows updating of registry, once per Era
+    // function addRegistry(address registry, uint256 index) external {
+    //     if(!lockMutable){                                                               // Rate limiting
+    //         require((UniswapFactory(registry).getExchange(address(0)) == address(0)), "Must be valid Registry");
+    //         _transfer(msg.sender, address(this), mapEra_Emission[1]);                    // Pay fee of 2048 Vether
+    //         lockMutable = true;                                                         // Lock contract for another Era
+    //         registryAddrArray[index] = registry;                                    // Add desired address
+    //     }
+    // }
     // Allows adding an excluded address, once per Era
     function addExcluded(address excluded) external {                   
         if(!lockMutable){                                                               // Rate limiting
-            _transfer(msg.sender, address(this), emission);                             // Pay fee
+            _transfer(msg.sender, address(this), mapEra_Emission[2]);                   // Pay fee of 1024 Vether
             lockMutable = true;                                                         // Lock contract for another Era
             mapAddress_Excluded[excluded] = true;                                       // Add desired address
         }
     }
-    // ################-REMOVE_THIS_FOR_MAINNET-##########################
-    function addRegistryInternal(address registry, uint256 index) public {
-        registryAddrArray[index] = registry;
-    }
-    // ################-REMOVE_THIS_FOR_MAINNET-##########################
     //======================================WITHDRAWAL======================================//
     // Used to efficiently track participation in each era
     function getDaysContributedForEra(address member, uint256 era) public view returns(uint256){
