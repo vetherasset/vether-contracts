@@ -32,7 +32,7 @@ contract Vether is ERC20 {
     uint256 public daysPerEra; uint256 public secondsPerDay;
     uint256 public genesis; uint256 public nextEraTime; uint256 public nextDayTime;
     address payable public burnAddress;
-    address[2] public registryAddrArray; bool public registryAdded;
+    address[2] public registryAddrArray; bool public lockMutable;
     uint256 public totalFees; uint256 public totalBurnt;
     // Public Mappings
     mapping(uint256=>uint256) public mapEra_Emission;                                           // Era->Emission
@@ -42,6 +42,7 @@ contract Vether is ERC20 {
     mapping(uint256=>mapping(uint256=>uint256)) public mapEraDay_EmissionRemaining;             // Era,Days->Emission
     mapping(uint256=>mapping(uint256=>mapping(address=>uint256))) public mapEraDay_MemberUnits; // Era,Days,Member->Units
     mapping(address=>mapping(uint256=>uint[])) public mapMemberEra_Days;                        // Member,Era->Days[]
+    mapping(address=>bool) public mapAddress_Excluded;
     // Events
     event NewEra(uint256 era, uint256 emission, uint256 time);
     event NewDay(uint256 era, uint256 day, uint256 time);
@@ -75,7 +76,7 @@ contract Vether is ERC20 {
         emit Transfer(address(0), address(this), totalSupply);                              // Mint the total supply to this address
         nextEraTime = genesis + (secondsPerDay * daysPerEra);                               // Set next time for coin era
         nextDayTime = genesis + secondsPerDay;                                              // Set next time for coin day
-        registryAdded = true;
+        mapAddress_Excluded[address(this)] = true; lockMutable = true;                      // Add this address to be excluded from fees
         mapEra_Emission[currentEra] = emission; 
         mapEraDay_EmissionRemaining[currentEra][currentDay] = emission; 
         mapEraDay_Emission[currentEra][currentDay] = emission;                               // Map Starting emission
@@ -115,8 +116,8 @@ contract Vether is ERC20 {
     }
     // Calculate Fee amount
     function _getFee(address _from, uint256 _value) private view returns (uint256) {
-        if (_from == address(this)) {
-           return 0;                                                                        // No fee if this contract transfers
+        if (mapAddress_Excluded[_from]) {
+           return 0;                                                                        // No fee if excluded
         } else {
             return (_value / 1000);                                                         // Fee amount = 0.1%
         }
@@ -183,13 +184,21 @@ contract Vether is ERC20 {
         emit Burn(_payer, _member, _era, _day, _eth);                                       // Burn event
         _updateEmission();                                                                  // Update emission Schedule
     }
-    // Allows updating of registry
+    // Allows updating of registry, once per Era
     function addRegistry(address registry, uint256 index) external {
-        if(!registryAdded){
+        if(!lockMutable){                                                               // Rate limiting
             require((UniswapFactory(registry).getExchange(address(0)) == address(0)), "Must be valid Registry");
-            _transfer(msg.sender, address(this), emission);
-            registryAdded = true;
-            registryAddrArray[index] = registry;
+            _transfer(msg.sender, address(this), emission);                             // Pay fee
+            lockMutable = true;                                                         // Lock contract for another Era
+            registryAddrArray[index] = registry;                                    // Add desired address
+        }
+    }
+    // Allows adding an excluded address, once per Era
+    function addExcluded(address excluded) external {                   
+        if(!lockMutable){                                                               // Rate limiting
+            _transfer(msg.sender, address(this), emission);                             // Pay fee
+            lockMutable = true;                                                         // Lock contract for another Era
+            mapAddress_Excluded[excluded] = true;                                       // Add desired address
         }
     }
     // ################-REMOVE_THIS_FOR_MAINNET-##########################
@@ -256,7 +265,7 @@ contract Vether is ERC20 {
             if (currentDay >= daysPerEra) {                                                 // If time passed the next Era time
                 currentEra += 1; currentDay = 0;                                            // Increment Era, reset Day
                 nextEraTime = _now + (secondsPerDay * daysPerEra);                          // Set next Era time
-                registryAdded = false;
+                lockMutable = false;
                 emission = getNextEraEmission();                                            // Get correct emission
                 mapEra_Emission[currentEra] = emission;                                     // Map emission to Era
                 emit NewEra(currentEra, emission, nextEraTime);                             // Emit Event
