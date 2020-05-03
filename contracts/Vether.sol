@@ -42,7 +42,7 @@ contract Vether is ERC20 {
     mapping(uint256=>mapping(uint256=>uint256)) public mapEraDay_EmissionRemaining;             // Era,Days->Emission
     mapping(uint256=>mapping(uint256=>mapping(address=>uint256))) public mapEraDay_MemberUnits; // Era,Days,Member->Units
     mapping(address=>mapping(uint256=>uint[])) public mapMemberEra_Days;                        // Member,Era->Days[]
-    mapping(address=>bool) public mapAddress_Excluded;
+    mapping(address=>bool) public mapAddress_Excluded;                                          // Address->Excluded
     // Events
     event NewEra(uint256 era, uint256 emission, uint256 time);
     event NewDay(uint256 era, uint256 day, uint256 time);
@@ -101,7 +101,7 @@ contract Vether is ERC20 {
         return true;
     }
     // Internal transfer function which includes the Fee
-    function _transfer(address _from, address _to, uint256 _value) internal {
+    function _transfer(address _from, address _to, uint256 _value) private {
         require(balanceOf[_from] >= _value, 'Must not send more than balance');
         require(balanceOf[_to] + _value >= balanceOf[_to], 'Balance overflow');
         balanceOf[_from] -= _value;
@@ -144,7 +144,7 @@ contract Vether is ERC20 {
         _burnTokens(token, amount, member);                                                 // Record Burn
     }
     // Calls when sending Tokens
-    function _burnTokens (address _token, uint256 _amount, address _member) internal {
+    function _burnTokens (address _token, uint256 _amount, address _member) private {
         uint256 _eth; address _ex = getExchange(_token);                                    // Get exchange
         if (_ex == address(0)) {                                                            // Handle Token without Exchange
             uint256 _startGas = gasleft();                                                  // Start counting gas
@@ -173,7 +173,7 @@ contract Vether is ERC20 {
         return exchangeToReturn;
     }
     // Internal - Records burn
-    function _recordBurn(address _payer, address _member, uint256 _era, uint256 _day, uint256 _eth) internal {
+    function _recordBurn(address _payer, address _member, uint256 _era, uint256 _day, uint256 _eth) private {
         if (mapEraDay_MemberUnits[_era][_day][_member] == 0){                               // If hasn't contributed to this Day yet
             mapMemberEra_Days[_member][_era].push(_day);                                    // Add it
         }

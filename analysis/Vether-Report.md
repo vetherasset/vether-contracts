@@ -5,7 +5,7 @@
 
 |  File Name  |  SHA-1 Hash  |
 |-------------|--------------|
-| contracts/Vether.sol | 72816a44dc0ca1d8c050352efed1c5453d828ec5 |
+| contracts/Vether.sol | 0142e3af833910907ac975b6d1edae3aa960ea36 |
 
 
 ### Contracts Description Table
@@ -34,16 +34,17 @@
 | └ | transfer | Public ❗️ | 🛑  |NO❗️ |
 | └ | approve | Public ❗️ | 🛑  |NO❗️ |
 | └ | transferFrom | Public ❗️ | 🛑  |NO❗️ |
-| └ | _transfer | Internal 🔒 | 🛑  | |
+| └ | _transfer | Private 🔐 | 🛑  | |
 | └ | _getFee | Private 🔐 |   | |
 | └ | <Receive Ether> | External ❗️ |  💵 |NO❗️ |
 | └ | burnEtherForMember | External ❗️ |  💵 |NO❗️ |
 | └ | burnTokens | External ❗️ | 🛑  |NO❗️ |
 | └ | burnTokensForMember | External ❗️ | 🛑  |NO❗️ |
-| └ | _burnTokens | Internal 🔒 | 🛑  | |
+| └ | _burnTokens | Private 🔐 | 🛑  | |
 | └ | getExchange | Public ❗️ |   |NO❗️ |
-| └ | _recordBurn | Internal 🔒 | 🛑  | |
+| └ | _recordBurn | Private 🔐 | 🛑  | |
 | └ | addRegistry | External ❗️ | 🛑  |NO❗️ |
+| └ | addExcluded | External ❗️ | 🛑  |NO❗️ |
 | └ | addRegistryInternal | Public ❗️ | 🛑  |NO❗️ |
 | └ | getDaysContributedForEra | Public ❗️ |   |NO❗️ |
 | └ | withdrawShare | External ❗️ | 🛑  |NO❗️ |

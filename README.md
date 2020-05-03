@@ -42,7 +42,7 @@ uint256 public currentEra; uint256 public currentDay;
 uint256 public daysPerEra; uint256 public secondsPerDay;
 uint256 public genesis; uint256 public nextEraTime; uint256 public nextDayTime;
 address payable public burnAddress;
-address[2] public registryAddrArray; bool public registryAdded;
+address[2] public registryAddrArray; bool public lockMutable;
 uint256 public totalFees; uint256 public totalBurnt;
 
 // Public Mappings
@@ -53,6 +53,7 @@ mapping(uint256=>mapping(uint256=>uint256)) public mapEraDay_Emission;
 mapping(uint256=>mapping(uint256=>uint256)) public mapEraDay_EmissionRemaining;
 mapping(uint256=>mapping(uint256=>mapping(address=>uint256))) public mapEraDay_MemberUnits;
 mapping(address=>mapping(uint256=>uint[])) public mapMemberEra_Days; 
+mapping(address=>bool) public mapAddress_Excluded;
 
 // Public Get Functions
 function getExchange(address token ) public view returns (address)
@@ -70,6 +71,7 @@ function burnEtherForMember(address member) external payable
 function burnTokens(address token, uint256 amount) external
 function burnTokensForMember(address token, uint256 amount, address member) external 
 function addRegistry(address registry, uint256 index) external
+function addExcluded(address excuded) external
 function withdrawShare(uint256 era, uint256 day) external 
 function withdrawShareForMember(uint256 era, uint256 day, address member) external
 ```
@@ -154,7 +156,7 @@ truffle test test/1_coin.js
 
 ## Analysis
 
-Find in `analysis`
+Find in [/analysis](https://github.com/vetherasset/vether-contracts/blob/master/analysis)
 ```
 yarn analysis
 ```
@@ -169,12 +171,12 @@ surya graph contracts/Vether.sol | dot -Tpng > analysis/Vether-Graph.png
 surya inheritance contracts/Vether.sol | dot -Tpng > analysis/Vether-Inheritance.png
 ```
 
-### [Description Report](https://github.com/vetherasset/vether-contracts/blob/master/analysis/report_vether.md)
+### [Description Report](https://github.com/vetherasset/vether-contracts/blob/master/analysis/Vether-Report.md)
 ```
-surya mdreport analysis/report_vether.md contracts/Vether.sol
+surya mdreport analysis/Vether-Report.md contracts/Vether.sol
 ```
 
-Describe
+### [Describe - Raw](https://github.com/vetherasset/vether-contracts/blob/master/analysis/Vether-Describe.md)
 ```
 surya describe contracts/Vether.sol
 ```
