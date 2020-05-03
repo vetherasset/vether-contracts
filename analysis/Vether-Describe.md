@@ -1,3 +1,4 @@
+```bash
 + [Int] ERC20 
     - [Ext] totalSupply
     - [Ext] balanceOf
@@ -42,3 +43,4 @@
 
  ($) = payable function
  # = non-constant function
+ ```
