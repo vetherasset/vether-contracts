@@ -114,7 +114,7 @@ name = "Vether"; symbol = "VETH"; decimals = 18; totalSupply = 1000000*10**decim
 emission = 2048000000000000000000; currentEra = 1; currentDay = 1;               // Set emission, Era and Day
 genesis = now; daysPerEra = 244; secondsPerDay = 84196;                          // Set genesis time
 burnAddress = 0x0111011001100001011011000111010101100101;                        // Set Burn Address
-registryAddress = 0xf5D915570BC477f9B8D6C0E980aA81757A3AaC36;                   // Set UniSwap V1 Mainnet
+registryAddress = 0xc0a47dFe034B400B47bDaD5FecDa2621de6c4d95;                    // Set UniSwap V1 Mainnet
 ```
 
 ## Testing - Buidler
