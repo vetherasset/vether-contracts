@@ -8,14 +8,14 @@ The Vether smart contracts implements the [Vether whitepaper](https://bitcointal
 Vether is an ERC-20 contract that implements the following interface:
 ```Solidity
 interface ERC20 {
-    function totalSupply() external view returns (uint256);
-    function balanceOf(address account) external view returns (uint256);
-    function transfer(address, uint256) external returns (bool);
-    function allowance(address owner, address spender) external view returns (uint256);
-    function approve(address, uint256) external returns (bool);
-    function transferFrom(address, address, uint256) external returns (bool);
-    event Transfer(address indexed from, address indexed to, uint256 value);
-    event Approval(address indexed owner, address indexed spender, uint256 value);
+    function totalSupply() external view returns (uint);
+    function balanceOf(address account) external view returns (uint);
+    function transfer(address, uint) external returns (bool);
+    function allowance(address owner, address spender) external view returns (uint);
+    function approve(address, uint) external returns (bool);
+    function transferFrom(address, address, uint) external returns (bool);
+    event Transfer(address indexed from, address indexed to, uint value);
+    event Approval(address indexed owner, address indexed spender, uint value);
     }
 ```
 
@@ -29,7 +29,7 @@ interface UniswapFactory {
     }
 // Uniswap Exchange Interface
 interface UniswapExchange {
-    function tokenToEthTransferInput(uint256 tokens_sold,uint256 min_eth,uint256 deadline, address recipient) external returns (uint256  eth_bought);
+    function tokenToEthTransferInput(uint tokens_sold,uint min_eth,uint deadline, address recipient) external returns (uint  eth_bought);
     }
 ```
 
@@ -37,30 +37,30 @@ interface UniswapExchange {
 The following public getters are available to query:
 ```Solidity
 // Public Parameters
-uint256 public emission;
-uint256 public currentEra; uint256 public currentDay;
-uint256 public daysPerEra; uint256 public secondsPerDay;
-uint256 public genesis; uint256 public nextEraTime; uint256 public nextDayTime;
+uint public emission;
+uint public currentEra; uint public currentDay;
+uint public daysPerEra; uint public secondsPerDay;
+uint public genesis; uint public nextEraTime; uint public nextDayTime;
 address payable public burnAddress;
-address[2] public registryAddrArray; bool public lockMutable;
-uint256 public totalFees; uint256 public totalBurnt;
+address public registryAddress;
+uint public totalFees; uint public totalBurnt;
 
 // Public Mappings
-mapping(uint256=>uint256) public mapEra_Emission;
-mapping(uint256=>mapping(uint256=>uint256)) public mapEraDay_Units;
-mapping(uint256=>mapping(uint256=>uint256)) public mapEraDay_UnitsRemaining;
-mapping(uint256=>mapping(uint256=>uint256)) public mapEraDay_Emission;
-mapping(uint256=>mapping(uint256=>uint256)) public mapEraDay_EmissionRemaining;
-mapping(uint256=>mapping(uint256=>mapping(address=>uint256))) public mapEraDay_MemberUnits;
-mapping(address=>mapping(uint256=>uint[])) public mapMemberEra_Days; 
+mapping(uint=>uint) public mapEra_Emission;
+mapping(uint=>mapping(uint=>uint)) public mapEraDay_Units;
+mapping(uint=>mapping(uint=>uint)) public mapEraDay_UnitsRemaining;
+mapping(uint=>mapping(uint=>uint)) public mapEraDay_Emission;
+mapping(uint=>mapping(uint=>uint)) public mapEraDay_EmissionRemaining;
+mapping(uint=>mapping(uint=>mapping(address=>uint))) public mapEraDay_MemberUnits;
+mapping(address=>mapping(uint=>uint[])) public mapMemberEra_Days; 
 mapping(address=>bool) public mapAddress_Excluded;
 
 // Public Get Functions
 function getExchange(address token ) public view returns (address)
-function getDaysContributedForEra(address member, uint256 era) public view returns(uint256 days)
-function getEmissionShare(uint256 era, uint256 day, address member) public view returns (uint256 emissionShare)
-function getNextEraEmission() public view returns (uint256)
-function getDayEmission() public view returns (uint256)
+function getDaysContributedForEra(address member, uint era) public view returns(uint days)
+function getEmissionShare(uint era, uint day, address member) public view returns (uint emissionShare)
+function getNextEraEmission() public view returns (uint)
+function getDayEmission() public view returns (uint)
 ```
 
 ### Vether Public Transactions
@@ -68,12 +68,11 @@ The following public transaction functions are available to call:
 ```Solidity
 receive() external payable
 function burnEtherForMember(address member) external payable
-function burnTokens(address token, uint256 amount) external
-function burnTokensForMember(address token, uint256 amount, address member) external 
-function addRegistry(address registry, uint256 index) external
+function burnTokens(address token, uint amount) external
+function burnTokensForMember(address token, uint amount, address member) external 
 function addExcluded(address excuded) external
-function withdrawShare(uint256 era, uint256 day) external 
-function withdrawShareForMember(uint256 era, uint256 day, address member) external
+function withdrawShare(uint era, uint day) external 
+function withdrawShareForMember(uint era, uint day, address member) external
 ```
 
 ### Constructor
@@ -102,7 +101,7 @@ name = "Vether"; symbol = "VETH"; decimals = 18; totalSupply = 16380*10**decimal
 emission = 2048000000000000000000; currentEra = 1; currentDay = 1;               // Set emission, era and day
 genesis = now; daysPerEra = 4; secondsPerDay = 10000;                            // Set genesis time
 burnAddress = address(0);
-registryAddrArray[0] = 0xf5D915570BC477f9B8D6C0E980aA81757A3AaC36;               // Set UniSwap V1 Rinkeby
+registryAddresss = 0xf5D915570BC477f9B8D6C0E980aA81757A3AaC36;                  // Set UniSwap V1 Rinkeby
 ```
 
 **Mainnet**
@@ -114,8 +113,8 @@ This is the constructor deployed to mainnet:
 name = "Vether"; symbol = "VETH"; decimals = 18; totalSupply = 1000000*10**decimals;
 emission = 2048000000000000000000; currentEra = 1; currentDay = 1;               // Set emission, Era and Day
 genesis = now; daysPerEra = 244; secondsPerDay = 84196;                          // Set genesis time
-burnAddress = address(0);                                                        // Set Burn Address
-registryAddrArray[0] = 0xf5D915570BC477f9B8D6C0E980aA81757A3AaC36;               // Set UniSwap V1 Mainnet
+burnAddress = 0x0111011001100001011011000111010101100101;                        // Set Burn Address
+registryAddress = 0xf5D915570BC477f9B8D6C0E980aA81757A3AaC36;                   // Set UniSwap V1 Mainnet
 ```
 
 ## Testing - Buidler

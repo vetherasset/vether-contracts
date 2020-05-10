@@ -111,7 +111,7 @@ contract Vether is ERC20 {
         require(balanceOf[_from] >= _value, 'Must not send more than balance');
         require(balanceOf[_to] + _value >= balanceOf[_to], 'Balance overflow');
         balanceOf[_from] -= _value;
-        uint _fee = _getFee(_from, _to, _value);                                            // Get fee amount                                      // Subtract from sender
+        uint _fee = _getFee(_from, _to, _value);                                            // Get fee amount
         balanceOf[_to] += (_value - _fee);                                                  // Add to receiver
         balanceOf[address(this)] += _fee;                                                   // Add fee to self
         totalFees += _fee;                                                                  // Track fees collected
@@ -205,7 +205,7 @@ contract Vether is ERC20 {
         _withdrawShare(era, day, member);
     }
     // Internal - withdraw function
-    function _withdrawShare (uint _era, uint _day, address _member) private {                                                                 // Update emission Schedule
+    function _withdrawShare (uint _era, uint _day, address _member) private {               // Update emission Schedule
         _updateEmission();
         if (_era < currentEra) {                                                            // Allow if in previous Era
             _processWithdrawal(_era, _day, _member);                                        // Process Withdrawal
@@ -265,10 +265,10 @@ contract Vether is ERC20 {
     // Calculate Era emission
     function getNextEraEmission() public view returns (uint) {
         uint _1 = 1*10**18;
-        if (emission > 1) {                                                                // Normal emission Schedule
-            return emission / 2;                                                            // emissions: 2048 -> 1.0
+        if (emission > _1) {                                                                // Normal Emission Schedule
+            return emission / 2;                                                            // Emissions: 2048 -> 1.0
         } else{                                                                             // Enters Fee Era
-            return 1;                                                                      // Return 1.0 from fees
+            return _1;                                                                      // Return 1.0 from fees
         }
     }
     // Calculate Day emission
