@@ -3,20 +3,18 @@ const BigNumber = require('bignumber.js')
 var Vether = artifacts.require("./Vether.sol")
 var Token1 = artifacts.require("./Token1.sol") 
 var Token2 = artifacts.require("./Token2.sol") 
-var Token3 = artifacts.require("./Token3.sol") 
+
 var Registry1 = artifacts.require("./Registry1.sol")
-var Registry2 = artifacts.require("./Registry2.sol")
+
 var Exchange1 = artifacts.require("./Exchange1.sol")
-var Exchange2 = artifacts.require("./Exchange2.sol")
+
 
 var coin; var coinAddress; 
 var acc0; var acc1; var acc2; var accBurn;
-var TknContractArray = [Token1, Token2, Token3];
+var TknContractArray = [Token1, Token2];
 var TknInstArray = []; var TknAddrArray = [];
-var RegContractArray = [Registry1, Registry2];
-var RegInstArray = []; var RegAddrArray = [];
-var ExcContractArray = [Exchange1, Exchange2];
-var ExcInstArray = []; var ExcAddrArray = [];
+var RegContract = Registry1; var RegInst; var RegAddr;
+var ExcContract = Exchange1; var ExcInst; var ExcAddr;
 var event = {"era":"", "day":"", "emission":""}
 
 const timeDelay = 1100;
@@ -24,13 +22,12 @@ const delay = ms => new Promise(res => setTimeout(res, ms));
 function BN2Int(BN) {return ((new BigNumber(BN)).toFixed()) }
 
 //######################################################################################
-// This test deploys Vether, three different ERC-20 tokens, 
-// two UniSwap registries and two UniSwap exchanges. 
-// It then registers the tokens in the exchanges, and the exchanges in the registries. 
-// It places ether in the exchanges to provide a pool balance
+// This test deploys Vether, two different ERC-20 tokens, 
+// 1 with UniSwap registry and exchange. 
+// It then registers the token in the exchange, and the exchange in the registry. 
+// It places ether in the exchange to provide a pool balance
 // It then sends the first token, which has a market and then withdraws
-// It then send the second token in the second registry and then withdraws
-// It then sends the third token which is not found in the registries and withdraws
+// It then sends the third token which is not found in the registry and withdraws
 // It then repeats, but designating a payment member
 //######################################################################################
 
@@ -44,19 +41,15 @@ contract("Vether", async accounts => {
 	withdraws(acc0, event, 2048)
 	sendToken(1, acc0)
 	withdraws(acc0, event, 3072)
-	sendToken(2, acc0, )
-	withdraws(acc0, event, 3584)
 	sendToken(0, acc0, acc1)
 	withdraws(acc0, event, 3584, acc1)
 	sendToken(1, acc0, acc1)
-	withdraws(acc0, event, 3584, acc1)
-	sendToken(2, acc0, acc1)
 	withdraws(acc0, event, 3584, acc1)
 })
 
 function constructor(accounts) {
 	acc0 = accounts[0]; acc1 = accounts[1]; acc2 = accounts[2]; accBurn = acc2;
-	console.log(acc2)
+	//console.log(acc2)
 	it("initializes with correct params", async () => {
 		coin = await Vether.new()
 		coinAddress = coin.address; //console.log("coinAddress:", coinAddress)
@@ -73,59 +66,57 @@ function deployTokens(){
 
 function deployRegistries(){
 	it("Deploy and get Registry Addresses", async () => {
-		for(var i = 0; i < RegContractArray.length; i++) {
-			RegInstArray[i] = await RegContractArray[i].new(); RegAddrArray[i] = RegInstArray[i].address; //console.log("Reg%sAddr:%s", i, RegAddrArray[i])
-		}
+		RegInst = await RegContract.new(); 
+		RegAddr = RegInst.address; //console.log("Reg%sAddr:%s", i, RegAddr)
 	})
 }
 
 function deployExchanges(){
 	it("Deploy and get Exchange Addresses", async () => {
-		for(var i = 0; i < ExcContractArray.length; i++) {
-			ExcInstArray[i] = await ExcContractArray[i].new(); ExcAddrArray[i] = ExcInstArray[i].address; //console.log("Exc%sAddr:%s", i, ExcAddrArray[i])
-		}
+		ExcInst = await ExcContract.new(); ExcAddr = ExcInst.address; //console.log("Exc%sAddr:%s", i, ExcAddr)
 	})
 }
 
 function setRegExc(){
 	it("Set Exchange, Token addr", async () => {
-		for(var i = 0; i < RegContractArray.length; i++) {
-			let r1 = await RegInstArray[i].setExchange(ExcAddrArray[i], TknAddrArray[i],  { from: acc0 })
-			let r2 = await RegInstArray[i].getExchange(TknAddrArray[i],  { from: acc0 })
-			assert.equal(r2, ExcAddrArray[i], "correct exchange addr set in registry")
+			let r1 = await RegInst.setExchange(ExcAddr, TknAddrArray[0],  { from: acc0 })
+			let r2 = await RegInst.getExchange(TknAddrArray[0],  { from: acc0 })
+			assert.equal(r2, ExcAddr, "correct exchange addr set in registry")
 			//console.log("excAddr set:", r2)
 
-			let r3 = await coin.addRegistryInternal(RegAddrArray[i], i, { from: acc0 })
-			let r4 = await coin.registryAddrArray.call(i)
-			assert.equal(r4, RegAddrArray[i], "correct registry addr set in coin contract")
+			let r3 = await coin.addRegistryInternal(RegAddr, { from: acc0 })
+			let r4 = await coin.registryAddress.call()
+			assert.equal(r4, RegAddr, "correct registry addr set in coin contract")
 			//console.log("regAddr Set:", r4)
 
-			let r5 = await coin.getExchange(TknAddrArray[i],  { from: acc0 })
-			assert.equal(r5, ExcAddrArray[i], "correct exchange2 addr returned from coin")
+			let r5 = await coin.getExchange(TknAddrArray[0],  { from: acc0 })
+			assert.equal(r5, ExcAddr, "correct exchange2 addr returned from coin")
 			//console.log("excAddr Returned by Coin:", r5)
 
-			let r6 = await ExcInstArray[i].setToken(TknAddrArray[i],  { from: acc0 })
-			let r7 = await ExcInstArray[i].getToken()
-			assert.equal(r7, TknAddrArray[i], "correct token addr set in exchange")
+			let r6 = await ExcInst.setToken(TknAddrArray[0],  { from: acc0 })
+			let r7 = await ExcInst.getToken()
+			assert.equal(r7, TknAddrArray[0], "correct token addr set in exchange")
 			//console.log("tknAddr Returned by Exc:", r7)
 
-			let r8 = await ExcInstArray[i].send(8000000000000000, { from: acc2 })
-			let balance = await web3.eth.getBalance(ExcAddrArray[i])
+			let r8 = await ExcInst.send(8000000000000000, { from: acc2 })
+			let balance = await web3.eth.getBalance(ExcAddr)
 			assert.equal(balance, 8000000000000000, "exchange balance correct")
-		}
 	})
 }
 
 function sendToken(i, _acc, member){
 	it("Acc0 send Burn Tokens", async () => {
 		await delay(timeDelay);
-		let accBurnBal1 = await web3.eth.getBalance(accBurn);
+
 		let _era = await coin.currentEra.call()
 		let _day = await coin.currentDay.call()
-		let _emission = await coin.emission.call()
+		let _emission = BN2Int(await coin.emission.call())
 		event = {"era":_era, "day":_day, "emission":_emission} 
 
-		//let balEx1 = BN2Int(await TknInstArray[i].balanceOf(ExcAddrArray[i]))
+		let balEx1 = await TknInstArray[i].balanceOf(ExcAddr)
+		let balBurn1 = await TknInstArray[i].balanceOf(accBurn)
+		let accBurnBal1 = new BigNumber(await web3.eth.getBalance(accBurn));
+		//console.log('accBurnBal1',accBurnBal1)
 
 		let r1 = await TknInstArray[i].approve(coinAddress, "1000000000000000000", { from: _acc })
 		var rx; var _member;
@@ -141,13 +132,14 @@ function sendToken(i, _acc, member){
 		//console.log("logs:%s - first:%s", rx.logs.length, rx.logs[4].event); 
 		//console.log(rx.logs[2])
 
-		if (i <= 1){
-			let balEx2 = BN2Int(await TknInstArray[i].balanceOf(ExcAddrArray[i]))
-			//console.log(balEx2)
-			//assert.equal(balEx2-balEx1, "1000000000000000000", "Exchange received Tokens");
+		if (i <= 0){
+			let balEx2 = await TknInstArray[i].balanceOf(ExcAddr)
+			//console.log('balEx2',BN2Int(balEx2))
+			assert.equal(balEx2-balEx1, "1000000000000000000", "Exchange received Tokens");
 
-			let accBurnBal2 = await web3.eth.getBalance(accBurn);
-			//assert.equal(accBurnBal2-accBurnBal1, "1999999999148032", "Burn Address received Ether");
+			let accBurnBal2 = new BigNumber(await web3.eth.getBalance(accBurn));
+			//console.log('accBurnBal2',accBurnBal2)
+			assert.equal(BN2Int(accBurnBal2.minus(accBurnBal1)), "2000000000000000", "Burn Address received Ether");
 	
 			let memberUnits = new BigNumber(await coin.mapEraDay_MemberUnits.call(_era, _day, _member));
 			assert.equal(memberUnits.toFixed(), '2000000000000000', "correct member units");
@@ -155,17 +147,17 @@ function sendToken(i, _acc, member){
 			let totalUnits = new BigNumber(await coin.mapEraDay_Units.call(_era, _day));
 			assert.equal(totalUnits.toFixed(), "2000000000000000", "correct totalUnits");
 		} else {
-			let balEx2 = await TknInstArray[i].balanceOf(accBurn);
-			//console.log(balEx2)
-			//assert.equal(balEx2-balEx1, "1000000000000000000", "BurnAddr received Tokens");
+			let balBurn2 = await TknInstArray[i].balanceOf(accBurn);
+			//console.log(balBurn2)
+			assert.equal(balBurn2-balBurn1, "1000000000000000000", "BurnAddr received Tokens");
 	
 			let memberUnits = new BigNumber(await coin.mapEraDay_MemberUnits.call(_era, _day, _member));
 			//console.log('memberUnits:', memberUnits.toFixed())
-			//assert.equal(memberUnits.toFixed(), '1768760000000000', "correct member units");
+			assert.isAtLeast(+memberUnits.toFixed(), 616208000000000, "correct member units");
 	
 			let totalUnits = new BigNumber(await coin.mapEraDay_Units.call(_era, _day));
-			//console.log('memberUnits:', totalUnits.toFixed())
-			//assert.equal(totalUnits.toFixed(), "1768760000000000", "correct totalUnits");
+			//console.log('totalUnits:', totalUnits.toFixed())
+			assert.isAtLeast(+totalUnits.toFixed(), 616208000000000, "correct totalUnits");
 		}
 
 		let emissionLeft = new BigNumber(await coin.mapEraDay_Emission.call(_era, _day));
@@ -191,7 +183,7 @@ function sendToken(i, _acc, member){
 		//console.log('emissionShare', emissionShare)
 
 		let _emissionShare = BN2Int(await coin.getEmissionShare(_era, _day, _member));
-		////console.log(_era, _day, _member, _emissionShare)
+		//console.log(_era, _day, _member, _emissionShare)
 		assert.equal(_emissionShare, _emission, "correct emissionShare");
 
 	})

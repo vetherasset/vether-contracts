@@ -10,7 +10,7 @@
     "truffle-contract": "^4.0.31",
     "truffle-security": "^1.7.1"
   },
-  "scripts":{
-    "analysis":"surya graph contracts/Vether.sol | dot -Tpng > analysis/Vether-Graph.png && surya inheritance contracts/Vether.sol | dot -Tpng > analysis/Vether-Inheritance.png && surya mdreport analysis/Vether-Report.md contracts/Vether.sol"
+  "scripts": {
+    "analysis": "surya graph contracts/Vether.sol | dot -Tpng > analysis/Vether-Graph.png && surya inheritance contracts/Vether.sol | dot -Tpng > analysis/Vether-Inheritance.png && surya mdreport analysis/Vether-Report.md contracts/Vether.sol"
   }
 }
