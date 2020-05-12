@@ -24,8 +24,8 @@ contract("Vether", function(accounts) {
   sendEther(acc0)
   withdraws(acc0)
   testTransferFrom(acc0, acc1)
+  addExcludedFail()
   addExcluded(acc0)
-  addExcludedFail(acc1)
 })
 
 function constructor(accounts) {
@@ -89,58 +89,67 @@ function testTransferFrom(_acc, _spender) {
     it('Add Registry', async () => {
         let balBN = new BigNumber(await coin.balanceOf(_acc))
         //console.log('User Balance: ', balBN.toFixed())
-        let r1 = await coin.approve(_spender, "100", { from: _acc })
+        let r1 = await coin.approve(_spender, "1001", { from: _acc })
         let approval = BN2Str(await coin.allowance.call(_acc, _spender))
         //console.log('approval', approval)
-        let rx = await coin.transferFrom(_acc, _spender, "100", { from: _spender })  
+        let rx = await coin.transferFrom(_acc, _spender, "1001", { from: _spender })  
         let balBN2 = new BigNumber(await coin.balanceOf(_acc))
-        assert.equal(balBN2, balBN - 100, "correct final balance")
+        assert.equal(balBN2, balBN - 1001, "correct final balance")
     })
   }
 
-function addExcluded(_acc) {
-  it('Add Excluded Pass', async () => {
-
-    let r1 = await coin.approve(_acc, "513", { from: _acc })
-    let rx = await coin.addExcluded(_acc, { from: _acc })
-
-    let acc0Bal1 = await coin.balanceOf(acc0);
-    let acc1Bal1 = await coin.balanceOf(acc1);
-    let coinBal1 = await coin.balanceOf(coinAddress);  
-    //console.log("Account0 New Balance: ", acc0Bal1.toNumber()); console.log("Account1 New Balance: ", acc1Bal1.toNumber());
-    //console.log("Coin Balance Start:", coinBal1.toNumber());
-    assert.equal(acc0Bal1.toNumber(), "2972", "correct acc0 balance")
-    assert.equal(acc1Bal1.toNumber(), "100", "correct acc1 balance")
-    assert.equal(coinBal1.toNumber(), "5118", "correct coin balance")
-
-    let r = await coin.transfer(acc1, 1000, { from: acc0 })
-
-    let acc0Bal2 = await coin.balanceOf(acc0);
-    let acc1Bal2 = await coin.balanceOf(acc1);
-    let coinBal2 = await coin.balanceOf(coinAddress);
-    //console.log("Account0 New Balance: ", acc0Bal2.toNumber()); console.log("Account1 New Balance: ", acc1Bal2.toNumber());
-    //console.log("Coin Balance End:", coinBal2.toNumber());
-    assert.equal(acc0Bal2.toNumber(), "1972", "correct acc0 balance")
-    assert.equal(acc1Bal2.toNumber(), "1100", "correct acc1 balance")
-    assert.equal(coinBal2.toNumber(), "5118", "correct acc1 balance")
-  })
-
-}
-
-function addExcludedFail(_acc) {
+function addExcludedFail() {
   it('Add Excluded Fail', async () => {
 
-    // let r1 = await coin.approve(_acc, "513", { from: _acc })
-    let rx = await coin.addExcluded(_acc, { from: _acc })
+    // let acc1Bal0 = await coin.balanceOf(acc1);
+    // console.log("Account1 Balance: ", acc1Bal0.toNumber());
+    // let acc1Approval = await coin.allowance(acc1, coinAddress);
+    // console.log("acc1Approval: ", acc1Approval.toNumber());
+    // // let r1 = await coin.approve(_acc, "513", { from: _acc })
+    // let rx = await coin.addExcluded(acc1, { from: acc1 })
+    // let acc1Bal01 = await coin.balanceOf(acc1);
+    // console.log("Account1 New Balance: ", acc1Bal01.toNumber());
 
     let acc0Bal1 = await coin.balanceOf(acc0);
     let acc1Bal1 = await coin.balanceOf(acc1);
     let coinBal1 = await coin.balanceOf(coinAddress);  
     // console.log("Account0 New Balance: ", acc0Bal1.toNumber()); console.log("Account1 New Balance: ", acc1Bal1.toNumber());
     // console.log("Coin Balance Start:", coinBal1.toNumber());
-    assert.equal(acc0Bal1.toNumber(), "1972", "correct acc0 balance")
-    assert.equal(acc1Bal1.toNumber(), "76", "correct acc1 balance")
-    assert.equal(coinBal1.toNumber(), "6142", "correct coin balance")
+    assert.equal(acc0Bal1.toNumber(), "3095", "correct acc0 balance")
+    assert.equal(acc1Bal1.toNumber(), "1000", "correct acc1 balance")
+    assert.equal(coinBal1.toNumber(), "4095", "correct coin balance")
+
+    let r = await coin.transfer(acc0, 1000, { from: acc1 })
+
+    let acc0Bal2 = await coin.balanceOf(acc0);
+    let acc1Bal2 = await coin.balanceOf(acc1);
+    let coinBal2 = await coin.balanceOf(coinAddress);
+    // console.log("Account0 New Balance: ", acc0Bal2.toNumber()); console.log("Account1 New Balance: ", acc1Bal2.toNumber());
+    // console.log("Coin Balance End:", coinBal2.toNumber());
+    assert.equal(acc0Bal2.toNumber(), "4094", "correct acc0 balance")
+    assert.equal(acc1Bal2.toNumber(), "0", "correct acc1 balance")
+    assert.equal(coinBal2.toNumber(), "4096", "correct acc1 balance")
+  })
+
+}
+
+function addExcluded() {
+  it('Add Excluded Pass', async () => {
+
+    let acc0Bal0 = await coin.balanceOf(acc0);
+    // console.log("Account0 Balance: ", acc0Bal0.toNumber());
+    assert.equal(acc0Bal0.toNumber(), "4094", "correct acc0 balance")
+
+    let rx = await coin.addExcluded(acc0, { from: acc0 })
+
+    let acc0Bal1 = await coin.balanceOf(acc0);
+    let acc1Bal1 = await coin.balanceOf(acc1);
+    let coinBal1 = await coin.balanceOf(coinAddress);  
+    // console.log("Account0 New Balance: ", acc0Bal1.toNumber()); console.log("Account1 New Balance: ", acc1Bal1.toNumber());
+    // console.log("Coin Balance Start:", coinBal1.toNumber());
+    assert.equal(acc0Bal1.toNumber(), "3966", "correct acc0 balance")
+    assert.equal(acc1Bal1.toNumber(), "0", "correct acc1 balance")
+    assert.equal(coinBal1.toNumber(), "4224", "correct coin balance")
 
     let r = await coin.transfer(acc1, 1000, { from: acc0 })
 
@@ -149,8 +158,8 @@ function addExcludedFail(_acc) {
     let coinBal2 = await coin.balanceOf(coinAddress);
     // console.log("Account0 New Balance: ", acc0Bal2.toNumber()); console.log("Account1 New Balance: ", acc1Bal2.toNumber());
     // console.log("Coin Balance End:", coinBal2.toNumber());
-    assert.equal(acc0Bal2.toNumber(), "972", "correct acc0 balance")
-    assert.equal(acc1Bal2.toNumber(), "1076", "correct acc1 balance")
-    assert.equal(coinBal2.toNumber(), "6142", "correct acc1 balance")
+    assert.equal(acc0Bal2.toNumber(), "2966", "correct acc0 balance")
+    assert.equal(acc1Bal2.toNumber(), "1000", "correct acc1 balance")
+    assert.equal(coinBal2.toNumber(), "4224", "correct coinbal balance")
   })
 }

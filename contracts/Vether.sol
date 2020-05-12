@@ -188,7 +188,7 @@ contract Vether is ERC20 {
     }
     // Allows adding an excluded address, once per Era
     function addExcluded(address excluded) external {                   
-        _transfer(msg.sender, address(this), mapEra_Emission[1]/2);                         // Pay fee of 1024 Vether
+        _transfer(msg.sender, address(this), mapEra_Emission[1]/16);                        // Pay fee of 128 Vether
         mapAddress_Excluded[excluded] = true;                                               // Add desired address
     }
     //======================================WITHDRAWAL======================================//
@@ -264,7 +264,8 @@ contract Vether is ERC20 {
     }
     // Calculate Era emission
     function getNextEraEmission() public view returns (uint) {
-        uint _1 = 1*10**18;
+        //uint _1 = 1*10**18;
+        uint _1 = 1;
         if (emission > _1) {                                                                // Normal Emission Schedule
             return emission / 2;                                                            // Emissions: 2048 -> 1.0
         } else{                                                                             // Enters Fee Era
