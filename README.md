@@ -37,7 +37,7 @@ interface UniswapExchange {
 The following public getters are available to query:
 ```Solidity
 // Public Parameters
-uint public emission;
+uint coin; uint public emission;
 uint public currentEra; uint public currentDay;
 uint public daysPerEra; uint public secondsPerDay;
 uint public genesis; uint public nextEraTime; uint public nextDayTime;
@@ -97,11 +97,12 @@ This allows the contract to be deployed to Rinkeby. It has a lifecycle of 5 days
 
 ```Solidity
 //testnet
-name = "Vether"; symbol = "VETH"; decimals = 18; totalSupply = 16380*10**decimals;                         
-emission = 2048000000000000000000; currentEra = 1; currentDay = 1;               // Set emission, era and day
-genesis = now; daysPerEra = 4; secondsPerDay = 10000;                            // Set genesis time
-burnAddress = address(0);
-registryAddresss = 0xf5D915570BC477f9B8D6C0E980aA81757A3AaC36;                  // Set UniSwap V1 Rinkeby
+name = "Vether"; symbol = "VETH"; decimals = 18; 
+coin = 1*10**decimals; totalSupply = 1000000*coin;                                  // Set Supply
+emission = 2048*coin*; currentEra = 1; currentDay = 1;                              // Set emission, era and day
+genesis = now; daysPerEra = 4; secondsPerDay = 10000;                               // Set genesis time
+burnAddress = 0x0111011001100001011011000111010101100101;                           // Set Burn Address
+registryAddresss = 0xf5D915570BC477f9B8D6C0E980aA81757A3AaC36;                      // Set UniSwap V1 Rinkeby
 ```
 
 **Mainnet**
@@ -110,11 +111,13 @@ This is the constructor deployed to mainnet:
 
 ```Solidity
 //mainnet
-name = "Vether"; symbol = "VETH"; decimals = 18; totalSupply = 1000000*10**decimals;
-emission = 2048000000000000000000; currentEra = 1; currentDay = 1;               // Set emission, Era and Day
-genesis = now; daysPerEra = 244; secondsPerDay = 84196;                          // Set genesis time
-burnAddress = 0x0111011001100001011011000111010101100101;                        // Set Burn Address
-registryAddress = 0xc0a47dFe034B400B47bDaD5FecDa2621de6c4d95;                    // Set UniSwap V1 Mainnet
+name = "Vether"; symbol = "VETH"; decimals = 18; 
+coin = 1*10**decimals; totalSupply = 1000000*coin;                                  // Set Supply
+emission = 2048*coin; currentEra = 1; currentDay = 1;                               // Set emission, Era and Day
+genesis = now; daysPerEra = 244; secondsPerDay = 84200;                             // Set genesis time
+burnAddress = 0x0111011001100001011011000111010101100101;                           // Set Burn Address
+registryAddress = 0xc0a47dFe034B400B47bDaD5FecDa2621de6c4d95;                       // Set UniSwap V1 Mainnet
+
 ```
 
 ## Testing - Buidler
