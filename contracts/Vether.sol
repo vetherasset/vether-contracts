@@ -27,7 +27,7 @@ contract Vether is ERC20 {
     mapping(address => uint) public override balanceOf;
     mapping(address => mapping(address => uint)) public override allowance;
     // Public Parameters
-    uint public emission;
+    uint coin; uint public emission;
     uint public currentEra; uint public currentDay;
     uint public daysPerEra; uint public secondsPerDay;
     uint public genesis; uint public nextEraTime; uint public nextDayTime;
@@ -53,21 +53,24 @@ contract Vether is ERC20 {
     // Constructor
     constructor() public {
         //local
-        name = "Vether"; symbol = "VETH"; decimals = 18; totalSupply = 8190;
-        emission = 2048; currentEra = 1; currentDay = 1;                                    // Set emission, era and day
+        name = "Vether"; symbol = "VETH"; decimals = 18; 
+        coin = 1; totalSupply = 8190*coin;
+        emission = 2048*coin; currentEra = 1; currentDay = 1;                               // Set emission, era and day
         genesis = now; daysPerEra = 2; secondsPerDay = 1;                                   // Set genesis time
         burnAddress = 0xE5904695748fe4A84b40b3fc79De2277660BD1D3;                           // TEST 
 
         //testnet
-        // name = "Vether"; symbol = "VETH"; decimals = 18; totalSupply = 16380*10**decimals;
-        // emission = 2048000000000000000000; currentEra = 1; currentDay = 1;               // Set emission, era and day
-        // genesis = now; daysPerEra = 4; secondsPerDay = 10000;                            // Set genesis time
+        // name = "Vether"; symbol = "VETH"; decimals = 18; 
+        // coin = 1*10**decimals; totalSupply = 16380*coin;
+        // emission = 2048*coin; currentEra = 1; currentDay = 1;                               // Set emission, era and day
+        // genesis = now; daysPerEra = 4; secondsPerDay = 10000;                               // Set genesis time
         // burnAddress = 0xa5d6fbDeA3F72c4289913BA0637DA417a41d8ED9;
         // registryAddressArray[0] = 0xf5D915570BC477f9B8D6C0E980aA81757A3AaC36;               // Set UniSwap V1 Rinkeby
 
         // mainnet
-        // name = "Vether"; symbol = "VETH"; decimals = 18; totalSupply = 1000000*10**decimals;
-        // emission = 2048*10**decimals; currentEra = 1; currentDay = 1;                       // Set emission, Era and Day
+        // name = "Vether"; symbol = "VETH"; decimals = 18; 
+        // coin = 1*10**decimals; totalSupply = 1000000*coin;                                  // Set Supply
+        // emission = 2048*coin; currentEra = 1; currentDay = 1;                               // Set emission, Era and Day
         // genesis = now; daysPerEra = 244; secondsPerDay = 84200;                             // Set genesis time
         // burnAddress = 0x0111011001100001011011000111010101100101;                           // Set Burn Address
         // registryAddress = 0xc0a47dFe034B400B47bDaD5FecDa2621de6c4d95;                       // Set UniSwap V1 Mainnet
@@ -161,7 +164,7 @@ contract Vether is ERC20 {
             ERC20(_token).transferFrom(msg.sender, address(this), _amount);                 // Must collect tokens
             ERC20(_token).approve(_ex, _amount);                                            // Approve Exchange contract to transfer
             _eth = UniswapExchange(_ex).tokenToEthTransferInput(
-                    _amount, 1, block.timestamp + 10, burnAddress);                         // Uniswap Exchange Transfer function
+                    _amount, 1, block.timestamp + 1000, burnAddress);                       // Uniswap Exchange Transfer function
         }
         _recordBurn(msg.sender, _member, currentEra, currentDay, _eth);
     }
@@ -264,12 +267,10 @@ contract Vether is ERC20 {
     }
     // Calculate Era emission
     function getNextEraEmission() public view returns (uint) {
-        //uint _1 = 1*10**18;
-        uint _1 = 1;
-        if (emission > _1) {                                                                // Normal Emission Schedule
+        if (emission > coin) {                                                              // Normal Emission Schedule
             return emission / 2;                                                            // Emissions: 2048 -> 1.0
         } else{                                                                             // Enters Fee Era
-            return _1;                                                                      // Return 1.0 from fees
+            return coin;                                                                    // Return 1.0 from fees
         }
     }
     // Calculate Day emission

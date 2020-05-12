@@ -34,6 +34,8 @@ Dai-Exchange
 
 #### Mainnet
 
+0xe160F2895068A6030C389Ed8FFC408D182A9033D <- deployed token
+
 ## Uniswap V1
 Registry
 0xc0a47dFe034B400B47bDaD5FecDa2621de6c4d95
