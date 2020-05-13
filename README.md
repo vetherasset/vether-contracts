@@ -4,6 +4,9 @@
 
 The Vether smart contracts implements the [Vether whitepaper](https://bitcointalk.org/index.php?topic=5243406) announced on 25 April 2020. 
 
+Mainnet: https://etherscan.io/address/0x31Bb711de2e457066c6281f231fb473FC5c2afd3#code
+Rinkeby: https://rinkeby.etherscan.io/address/0xb6c96d0fc808fc05072f9c2b071a9c09c4d4ccb4#code
+
 ### ERC-20
 Vether is an ERC-20 contract that implements the following interface:
 ```Solidity
