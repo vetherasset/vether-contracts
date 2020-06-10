@@ -14,4 +14,3 @@ with attack 250
 with bad attack
 4269328000000000 units
 48325960000000000 gas
-
