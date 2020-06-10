@@ -5,6 +5,9 @@ var Registry1 = artifacts.require("./Registry1.sol")
 var Exchange1 = artifacts.require("./Exchange1.sol") 
 var Registry2 = artifacts.require("./Registry2.sol")
 var Exchange2 = artifacts.require("./Exchange2.sol") 
+// var Vether = artifacts.require("./Vether.sol");
+// let AttackToken = artifacts.require("./attackToken.sol");
+// let AttackContract= artifacts.require("./attackContract.sol");
 
 module.exports = async() => {
     const token1 = await Token1.new();
@@ -21,4 +24,5 @@ module.exports = async() => {
     Exchange1.setAsDeployed(exchange1)
     const exchange2 = await Exchange2.new();
     Exchange2.setAsDeployed(exchange2)
+
 };
