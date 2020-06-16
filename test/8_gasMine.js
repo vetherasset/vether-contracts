@@ -1,6 +1,6 @@
 var Vether = artifacts.require("./Vether.sol")
-var AttackToken = artifacts.require("./AttackToken.sol") 
-var AttackContract = artifacts.require("./AttackContract.sol") 
+var GasToken = artifacts.require("./GasToken.sol") 
+var GasMineContract = artifacts.require("./GasMineContract.sol") 
 var Token1 = artifacts.require("./Token1.sol") 
 var Token2 = artifacts.require("./Token2.sol") 
 var Registry1 = artifacts.require("./Registry1.sol")
@@ -12,12 +12,12 @@ var coin; var coinAddress;
 var acc0; var acc1; var acc2; var accBurn;
 
 var TknContractArray = [Token1, Token2];
-var TknInstArray = []; var TknAddrArray = [];
+var gasTokenArray = []; var TknAddrArray = [];
 var RegContract = Registry1; var RegInst; var RegAddr;
 var ExcContract = Exchange1; var ExcInst; var ExcAddr;
 
-var TknInst; var TknAddr;
-var ConInst; var ConAddr;
+var gasToken; var TknAddr;
+var gasMineContract; var ConAddr;
 
 function BN2Int(BN) {return ((new BigNumber(BN)).toFixed()) }
 function getBN(BN) {return ((new BigNumber(BN))) }
@@ -28,7 +28,7 @@ contract("Vether", async accounts => {
 	deployRegistries()
 	deployExchanges()
 	setRegExc()
-    attack()
+    gasMine()
 })
 
 
@@ -39,20 +39,26 @@ function constructor(accounts) {
 		coin = await Vether.new()
         coinAddress = coin.address; //console.log("coinAddress:", coinAddress)
         
-        TknInst = await AttackToken.new();
-        TknAddr = TknInst.address;
+        gasToken = await GasToken.new();
+		TknAddr = gasToken.address;
 
-        ConInst = await AttackContract.new(TknAddr, coinAddress);
-        ConAddr = ConInst.address;
+        gasMineContract = await GasMineContract.new(TknAddr, coinAddress);
+		ConAddr = gasMineContract.address;
+		
+		const supply = await gasToken.totalSupply()
+		await gasToken.transfer(ConAddr, supply)
+		const balance = await gasToken.balanceOf(ConAddr)
 
-        console.log(coinAddress, TknAddr, ConAddr)
+		console.log(coinAddress, TknAddr, ConAddr)
+		console.log('balance', BN2Int(balance))
+		console.log('gas token', await gasMineContract.gasToken())
 	})
 }
 
 function deployTokens(){
 	it("Deploy and get Token Addresses", async () => {
 		for(var i = 0; i < TknContractArray.length; i++) {
-			TknInstArray[i] = await TknContractArray[i].new(); TknAddrArray[i] = TknInstArray[i].address; //console.log("tkn%sAddr:%s", i, TknAddrArray[i])
+			gasTokenArray[i] = await TknContractArray[i].new(); TknAddrArray[i] = gasTokenArray[i].address; //console.log("tkn%sAddr:%s", i, TknAddrArray[i])
 		}
 	})
 }
@@ -97,30 +103,20 @@ function setRegExc(){
 	})
 }
 
-function attack() {
+function gasMine() {
 
-	it("attacks", async () => {
-        // let r1 = await TknInst.approve(coinAddress, "1000000000000000000", { from: acc0 })
-        // console.log(r1.logs[0])
-        // let rx = await coin.burnTokens(TknAddr, "100000000000000000",  { from: acc0 })
-        // console.log(rx.logs[0])
+	it("Gas Mines", async () => {
         let era = await coin.currentEra();
         let day = await coin.currentDay();
-        console.log(era, day)
-
-        let r2 = await TknInst.approve(ConAddr, "1000000000000000000", { from: acc0 })
-        // console.log(r2.logs[0])
-        let balStart = getBN(await web3.eth.getBalance(acc0))
-        let tx = await ConInst.attack("100000000000000000", { from: acc0 })
+		console.log(BN2Int(era), BN2Int(day))
+		let balStart = getBN(await web3.eth.getBalance(acc0))
+		
+		await gasMineContract.mine()
+		
         let balEnd = getBN(await web3.eth.getBalance(acc0))
-        // console.log(tx.receipt.rawLogs)
-        // console.log("logs:%s - first:%s", tx.logs.length, tx.logs[0].event); 
-
-
-        let units = BN2Int(await coin.mapEraDay_MemberUnits.call(era, day, ConAddr))
-        console.log(units)
-
-        console.log(BN2Int(balStart.minus(balEnd)))
+        let units = BN2Int(await coin.mapEraDay_MemberUnits.call(era, day, acc0))
+        console.log('%s - units awarded', units)
+        console.log("%s - gas spent", BN2Int(balStart.minus(balEnd)))
 
 	})
 }
