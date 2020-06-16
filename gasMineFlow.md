@@ -1,4 +1,4 @@
-GasMine
+GasMine Process
 
 1) Deploy GasToken, mint to self
 2) Deploy GasTokenContract, wuth token contract, vether contract
