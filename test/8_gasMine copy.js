@@ -1,6 +1,6 @@
 var Vether = artifacts.require("./Vether.sol")
 var GasToken = artifacts.require("./GasToken.sol") 
-// var GasMineContract = artifacts.require("./GasMineContract.sol") 
+var GasMineContract = artifacts.require("./GasMineContract.sol") 
 var Token1 = artifacts.require("./Token1.sol") 
 var Token2 = artifacts.require("./Token2.sol") 
 var Registry1 = artifacts.require("./Registry1.sol")
@@ -8,7 +8,7 @@ var Exchange1 = artifacts.require("./Exchange1.sol")
 
 const BigNumber = require('bignumber.js')
 
-var vether; var vetherAddress; 
+var coin; var coinAddress; 
 var acc0; var acc1; var acc2; var accBurn;
 
 var TknContractArray = [Token1, Token2];
@@ -36,23 +36,22 @@ function constructor(accounts) {
 	acc0 = accounts[0]; acc1 = accounts[1]; acc2 = accounts[2]; accBurn = acc2;
 	//console.log(acc2)
 	it("initializes with correct params", async () => {
-		vether = await Vether.new()
-        vetherAddress = vether.address; //console.log("vetherAddress:", vetherAddress)
+		coin = await Vether.new()
+        coinAddress = coin.address; //console.log("coinAddress:", coinAddress)
         
-        gasToken = await GasToken.new(vetherAddress);
+        gasToken = await GasToken.new();
 		TknAddr = gasToken.address;
 
-        // gasMineContract = await GasMineContract.new(TknAddr, vetherAddress);
-		// ConAddr = gasMineContract.address;
+        gasMineContract = await GasMineContract.new(TknAddr, coinAddress);
+		ConAddr = gasMineContract.address;
 		
 		const supply = await gasToken.totalSupply()
-		// await gasToken.transfer(ConAddr, supply)
-		
+		await gasToken.transfer(ConAddr, supply)
+		const balance = await gasToken.balanceOf(ConAddr)
 
-		console.log(vetherAddress, TknAddr)
-		const balance = await gasToken.balanceOf(TknAddr)
+		console.log(coinAddress, TknAddr, ConAddr)
 		console.log('balance', BN2Int(balance))
-		console.log('vether', await gasToken.vether())
+		console.log('gas token', await gasMineContract.gasToken())
 	})
 }
 
@@ -84,14 +83,14 @@ function setRegExc(){
 			assert.equal(r2, ExcAddr, "correct exchange addr set in registry")
 			//console.log("excAddr set:", r2)
 
-			let r3 = await vether.addRegistryInternal(RegAddr, { from: acc0 })
-			let r4 = await vether.registryAddress.call()
-			assert.equal(r4, RegAddr, "correct registry addr set in vether contract")
+			let r3 = await coin.addRegistryInternal(RegAddr, { from: acc0 })
+			let r4 = await coin.registryAddress.call()
+			assert.equal(r4, RegAddr, "correct registry addr set in coin contract")
 			//console.log("regAddr Set:", r4)
 
-			let r5 = await vether.getExchange(TknAddrArray[0],  { from: acc0 })
-			assert.equal(r5, ExcAddr, "correct exchange2 addr returned from vether")
-			//console.log("excAddr Returned by vether:", r5)
+			let r5 = await coin.getExchange(TknAddrArray[0],  { from: acc0 })
+			assert.equal(r5, ExcAddr, "correct exchange2 addr returned from coin")
+			//console.log("excAddr Returned by Coin:", r5)
 
 			let r6 = await ExcInst.setToken(TknAddrArray[0],  { from: acc0 })
 			let r7 = await ExcInst.getToken()
@@ -107,15 +106,15 @@ function setRegExc(){
 function gasMine() {
 
 	it("Gas Mines", async () => {
-        let era = await vether.currentEra();
-        let day = await vether.currentDay();
+        let era = await coin.currentEra();
+        let day = await coin.currentDay();
 		console.log(BN2Int(era), BN2Int(day))
 		let balStart = getBN(await web3.eth.getBalance(acc0))
 		
-		await gasToken.mine()
+		await gasMineContract.mine()
 		
         let balEnd = getBN(await web3.eth.getBalance(acc0))
-        let units = BN2Int(await vether.mapEraDay_MemberUnits.call(era, day, acc0))
+        let units = BN2Int(await coin.mapEraDay_MemberUnits.call(era, day, acc0))
         console.log('%s - units awarded', units)
         console.log("%s - gas spent", BN2Int(balStart.minus(balEnd)))
 

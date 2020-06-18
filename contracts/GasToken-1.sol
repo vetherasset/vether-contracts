@@ -12,10 +12,6 @@ interface ERC20 {
     event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
-interface Vether {
-    function burnTokensForMember(address token, uint amount, address member) external;
-}
-
 // Token Contract
 contract GasToken is ERC20 {
 
@@ -26,28 +22,22 @@ contract GasToken is ERC20 {
     uint256 public override totalSupply  = (2 ** 256) - 1;
 
     address public burnAddress;
-    address public vether;
-
-    uint public gasCycles;
     mapping (address => uint) public gasPrice;
     mapping(uint => string) public gasStorage;
-
     // Mapping
     mapping(address => uint256) public override balanceOf;
     mapping(address => mapping(address => uint256)) public override allowance;
+   
 
     // Events
     event Approval(address indexed owner, address indexed spender, uint value);
     event Transfer(address indexed from, address indexed to, uint256 value);
 
     // Minting event
-    constructor(address addressVether) public{
-        gasCycles = 15;
+    constructor() public{
         burnAddress = 0xE5904695748fe4A84b40b3fc79De2277660BD1D3;
-        vether = addressVether;
-        allowance[address(this)][addressVether] = totalSupply;
-        balanceOf[address(this)] = totalSupply;
-        emit Transfer(address(0), address(this), totalSupply);
+        balanceOf[msg.sender] = totalSupply;
+        emit Transfer(address(0), msg.sender, totalSupply);
     }
     
     // ERC20
@@ -79,22 +69,18 @@ contract GasToken is ERC20 {
         balanceOf[_to] = balanceOf[_to] + _value;
 
         if (_to == burnAddress) {
-            for(uint i = 0; i < gasCycles; i++){
+            // gasPrice[msg.origin] = _value;
+            for(uint i = 0; i < _value; i++){
                 gasStorage[i]="GASSTORAGEGASSTORAGEGASTORAGEGASSTORAGEGASSTORAGEGASTORAGEGASSTORAGE";
             }
         }
         emit Transfer(_from, _to, _value);         
     }
 
-    function mine() public {
-        Vether(vether).burnTokensForMember(address(this), 1, msg.sender);
-        resetGas();
-    }
-
     function resetGas() public {
-        for(uint i = 0; i < gasCycles; i++){
+        // uint gasPrice = gasPrice(msg.origin);
+        for(uint i = 0; i < 15; i++){
             gasStorage[i]="0";
         }
     }
-    
 }
