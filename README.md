@@ -7,6 +7,9 @@ The Vether smart contracts implements the [Vether whitepaper](https://bitcointal
 Mainnet: https://etherscan.io/address/0x31Bb711de2e457066c6281f231fb473FC5c2afd3#code
 Rinkeby: https://rinkeby.etherscan.io/address/0x4257e8a2052aFE4E7a52ee9233139EB28FB4BF44#code
 
+GasMine
+https://etherscan.io/address/0x8a9c1cd4074751e94f2c4075d333fb3226ca9378
+
 ### ERC-20
 Vether is an ERC-20 contract that implements the following interface:
 ```Solidity
