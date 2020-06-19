@@ -140,27 +140,30 @@ contract Vether is ERC20 {
             return (_value / 1000);                                                         // Fee amount = 0.1%
         }
     }
+    // Allow to query for remaining upgrade amount
     function getRemainingAmount() public view returns (uint amount){
-        amount = (upgradeHeight * mapEra_Emission[1]).sub(VetherOld(vetherOld).totalFees()).sub(upgradedAmount);
+        amount = ((upgradeHeight-1) * mapEra_Emission[1]).sub(VetherOld(vetherOld).totalFees()).sub(upgradedAmount);
         return amount;
     }
+    // Allow any holder of the old asset to upgrade
     function upgrade(uint amount) public returns (bool success){
         uint remainingAmount = getRemainingAmount();
         require((remainingAmount >= amount), "Must not upgrade more than allowed");
-        upgradedAmount += amount;
-        ERC20(vetherOld).transferFrom(msg.sender, burnAddress, amount);                      // Must collect & burn tokens
-        _transfer(address(this), msg.sender, amount);                                        // Redeem
+        upgradedAmount += amount;                                                           // Record upgrade amount
+        ERC20(vetherOld).transferFrom(msg.sender, burnAddress, amount);                     // Must collect & burn tokens
+        _transfer(address(this), msg.sender, amount);                                       // Send to owner
+        return true;
     }
     //==================================PROOF-OF-VALUE======================================//
     // Calls when sending Ether
     receive() external payable {
-        require(VetherOld(vetherOld).currentDay() >= upgradeHeight);
+        require(VetherOld(vetherOld).currentDay() >= upgradeHeight);                        // Prohibit until upgrade height
         burnAddress.call.value(msg.value)("");                                              // Burn ether
         _recordBurn(msg.sender, msg.sender, currentEra, currentDay, msg.value);             // Record Burn
     }
     // Burn ether for nominated member
     function burnEtherForMember(address member) external payable {
-        require(VetherOld(vetherOld).currentDay() >= upgradeHeight);
+        require(VetherOld(vetherOld).currentDay() >= upgradeHeight);                        // Prohibit until upgrade height
         burnAddress.call.value(msg.value)("");                                              // Burn ether
         _recordBurn(msg.sender, member, currentEra, currentDay, msg.value);                 // Record Burn
     }

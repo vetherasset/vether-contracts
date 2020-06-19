@@ -63,7 +63,7 @@ function constructor(accounts) {
 
 		const totalFees = BN2Str(await vetherOld.totalFees())
 		const remaining = BN2Str(await vether.getRemainingAmount())
-		assert.equal(remaining, upgradeHeight*2048)
+		assert.equal(remaining, (upgradeHeight-1)*2048)
 		//console.log(remaining)
 
 	})
