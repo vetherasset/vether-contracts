@@ -275,7 +275,7 @@ contract Vether is ERC20 {
         mapMember_Votes[msg.sender] = balance;
         mapMember_Vote[msg.sender] = proposedAddress;
         mapProposedAddress_Votes[proposedAddress] += balance;
-        return checkApproval(proposedAddress);
+        return checkThreshold(proposedAddress);
     }
     // Public - vote on a change of incentive address from contract
     function voteFromContract(address proposedAddress, address member, uint balance) public returns (bool success){
@@ -283,10 +283,10 @@ contract Vether is ERC20 {
         mapMember_Votes[member] = balance;
         mapMember_Vote[member] = proposedAddress;
         mapProposedAddress_Votes[proposedAddress] += balance;
-        return checkApproval(proposedAddress);
+        return checkThreshold(proposedAddress);
     }
 
-    function checkApproval(address _proposedAddress) private returns(bool) {
+    function checkThreshold(address _proposedAddress) private returns(bool) {
         uint thresholdApproval = totalEmitted / 2;
         if(mapProposedAddress_Votes[_proposedAddress] > thresholdApproval){
             incentiveAddress = _proposedAddress;

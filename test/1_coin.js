@@ -1,4 +1,4 @@
-var Vether = artifacts.require("./Vether.sol")
+// var Vether = artifacts.require("./Vether.sol")
 const BigNumber = require('bignumber.js')
 var TruffleAssert = require('truffle-assertions')
 
@@ -15,6 +15,11 @@ const Era = 1; const Day = 1
 // Then tests Vether params
 //######################################################################################
 
+// Test Params
+// totalSupply = 8190
+// daysPerEra = 2
+// upgradeHeight = 1
+
 contract("Vether", function(accounts) {
   constructor(accounts)
   initialises()
@@ -23,20 +28,22 @@ contract("Vether", function(accounts) {
 })
 
 function constructor(accounts){
-  acc0 = accounts[0]; acc1 = accounts[1]; acc2 = accounts[2]; BurnAddress = acc2
+  acc0 = accounts[0]; acc1 = accounts[1]; acc2 = accounts[2];
 
   it("constructor events", async () => {
-    let Vether = artifacts.require("Vether.sol");
-    coin = await Vether.new()
+    let VetherOld = artifacts.require("./VetherOld.sol");
+    vetherOld = await VetherOld.new()
+    let Vether = artifacts.require("./Vether.sol");
+    coin = await Vether.new(vetherOld.address)
     coinAddress = coin.address;
     console.log("coin:", coinAddress)
 
-    const transactionHash = coin.transactionHash;
-    const transactionReceipt = web3.eth.getTransactionReceipt(transactionHash);
-    const blockNumber = transactionReceipt.blockNumber;
-    const eventList = await coin.getPastEvents("allEvents", {fromBlock: blockNumber, toBlock: blockNumber});
-    const logs = eventList.filter(ev => ev.transactionHash === transactionHash)
-    assert.equal(logs[0].returnValues.value, Supply, 'correct mint')
+    // const transactionHash = coin.transactionHash;
+    // const transactionReceipt = web3.eth.getTransactionReceipt(transactionHash);
+    // const blockNumber = transactionReceipt.blockNumber;
+    // const eventList = await coin.getPastEvents("allEvents", {fromBlock: blockNumber, toBlock: blockNumber});
+    // const logs = eventList.filter(ev => ev.transactionHash === transactionHash)
+    // assert.equal(logs[0].returnValues.value, Supply, 'correct mint')
 
   });
 }
@@ -107,7 +114,7 @@ function checkParams(){
       assert.equal(genesis.plus((daysPerEra.multipliedBy(secondsPerDay))).toFixed(), nextEraTime.toFixed(), 'era time correct')
 
       let _burnAddress = await coin.burnAddress.call()
-      assert.equal(_burnAddress, BurnAddress, "correct BurnAddress")
+      assert.equal(_burnAddress, '0x0111011001100001011011000111010101100101', "correct BurnAddress")
       let _mapEra_Emission = new BigNumber(await coin.mapEra_Emission.call(Era))
       assert.equal(_mapEra_Emission.toFixed(), Emission, "correct emission");
 

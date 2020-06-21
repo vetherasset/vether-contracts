@@ -30,8 +30,10 @@ contract("Vether", function(accounts) {
 function constructor(accounts) {
   acc0 = accounts[0]; acc1 = accounts[1]; acc2 = accounts[2];
   it("constructor events", async () => {
+    let VetherOld = artifacts.require("./VetherOld.sol");
+    vetherOld = await VetherOld.new()
     let Vether = artifacts.require("Vether.sol");
-    coin = await Vether.new()
+    coin = await Vether.new(vetherOld.address)
     coinAddress = coin.address;
     //console.log("coin:", coinAddress) 
   });

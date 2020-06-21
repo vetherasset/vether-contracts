@@ -11,10 +11,19 @@ interface ERC20 {
     event Approval(address indexed owner, address indexed spender, uint value);
     }
 interface VetherOld {
+    function name() external view returns (string memory);
+    function symbol() external view returns (string memory);
+    function decimals() external view returns (uint);
+    function totalSupply() external view returns (uint);
     function genesis() external view returns (uint);
-    function totalFees() external view returns (uint);
-    function currentDay() external view returns (uint);
     function currentEra() external view returns (uint);
+    function currentDay() external view returns (uint);
+    function emission() external view returns (uint);
+    function daysPerEra() external view returns (uint);
+    function secondsPerDay() external view returns (uint);
+    function totalBurnt() external view returns (uint);
+    function totalFees() external view returns (uint);
+    function burnAddress() external view returns (address payable);
 }
 library SafeMath {
     function sub(uint256 a, uint256 b) internal pure returns (uint256) {
@@ -44,7 +53,7 @@ contract Vether is ERC20 {
     uint public genesis; uint public nextEraTime; uint public nextDayTime;
     address payable public burnAddress;
     address public vetherOld;
-    uint public totalFees; uint public totalBurnt;
+    uint public totalFees; uint public totalBurnt; uint public totalEmitted;
     // Public Mappings
     mapping(uint=>uint) public mapEra_Emission;                                             // Era->Emission
     mapping(uint=>mapping(uint=>uint)) public mapEraDay_Units;                              // Era,Days->Units
@@ -55,40 +64,33 @@ contract Vether is ERC20 {
     mapping(address=>mapping(uint=>uint[])) public mapMemberEra_Days;                       // Member,Era->Days[]
     mapping(address=>bool) public mapAddress_Excluded;                                      // Address->Excluded
     // Events
-    event NewEra(uint era, uint emission, uint time);
-    event NewDay(uint era, uint day, uint time);
+    event NewEra(uint era, uint emission, uint time, uint totalBurnt);
+    event NewDay(uint era, uint day, uint time, uint previousDayTotal);
     event Burn(address indexed payer, address indexed member, uint era, uint day, uint units, uint dailyTotal);
     event Withdrawal(address indexed caller, address indexed member, uint era, uint day, uint value, uint valueRemaining);
 
     //=====================================CREATION=========================================//
     // Constructor
     constructor(address _vetherOld) public {
-        //local
-        name = "Vether"; symbol = "VETH"; decimals = 18; 
-        coin = 1; totalSupply = 8190*coin;
-        daysPerEra = 20; secondsPerDay = 1;
-        burnAddress = 0x0111011001100001011011000111010101100101; 
-        vetherOld = _vetherOld;
-        upgradeHeight = 5;
-        emission = 2048*coin; currentEra = 1; currentDay = upgradeHeight;
-        genesis = VetherOld(vetherOld).genesis();
-
-        //testnet
-        // name = "Vether"; symbol = "VETH"; decimals = 18; 
-        // coin = 1*10**decimals; totalSupply = 16380*coin;
-        // emission = 2048*coin; currentEra = 1; currentDay = 1;                               // Set emission, era and day
-        // genesis = now; daysPerEra = 4; secondsPerDay = 10000;                               // Set genesis time
-        // burnAddress = 0xa5d6fbDeA3F72c4289913BA0637DA417a41d8ED9;
-        // registryAddressArray[0] = 0xf5D915570BC477f9B8D6C0E980aA81757A3AaC36;               // Set UniSwap V1 Rinkeby
-
-        // mainnet
-        // name = "Vether"; symbol = "VETH"; decimals = 18; 
-        // coin = 1*10**decimals; totalSupply = 1000000*coin;                                  // Set Supply
-        // emission = 2048*coin; currentEra = 1; currentDay = 1;                               // Set emission, Era and Day
-        // genesis = now; daysPerEra = 244; secondsPerDay = 84200;                             // Set genesis time
-        // burnAddress = 0x0111011001100001011011000111010101100101;                           // Set Burn Address
-        // registryAddress = 0xc0a47dFe034B400B47bDaD5FecDa2621de6c4d95;                       // Set UniSwap V1 Mainnet
         
+        vetherOld = _vetherOld; 
+        upgradeHeight = 5;
+        coin = 1; 
+        name = VetherOld(vetherOld).name(); 
+        symbol = VetherOld(vetherOld).symbol(); 
+        decimals = VetherOld(vetherOld).decimals(); 
+        totalSupply = VetherOld(vetherOld).totalSupply();
+        genesis = VetherOld(vetherOld).genesis();
+        currentEra = VetherOld(vetherOld).currentEra(); 
+        currentDay = upgradeHeight;
+        emission = VetherOld(vetherOld).emission(); 
+        daysPerEra = VetherOld(vetherOld).daysPerEra(); 
+        secondsPerDay = VetherOld(vetherOld).secondsPerDay();
+        totalBurnt = VetherOld(vetherOld).totalBurnt(); 
+        totalFees = VetherOld(vetherOld).totalFees(); 
+        totalEmitted = (upgradeHeight-1)*emission;
+        burnAddress = VetherOld(vetherOld).burnAddress(); 
+
         balanceOf[address(this)] = totalSupply; 
         emit Transfer(burnAddress, address(this), totalSupply);                             // Mint the total supply to this address
         nextEraTime = genesis + (secondsPerDay * daysPerEra);                               // Set next time for coin era
@@ -199,6 +201,7 @@ contract Vether is ERC20 {
     }
     // Internal - withdraw function
     function _withdrawShare (uint _era, uint _day, address _member) private returns (uint value) {
+        _updateEmission(); 
         if (_era < currentEra) {                                                            // Allow if in previous Era
             value = _processWithdrawal(_era, _day, _member);                                // Process Withdrawal
         } else if (_era == currentEra) {                                                    // Handle if in current Era
@@ -206,7 +209,6 @@ contract Vether is ERC20 {
                 value = _processWithdrawal(_era, _day, _member);                            // Process Withdrawal
             }
         }  
-        _updateEmission(); 
         return value;
     }
     // Internal - Withdrawal function
@@ -243,20 +245,21 @@ contract Vether is ERC20 {
     // Internal - Update emission function
     function _updateEmission() private {
         uint _now = now;                                                                    // Find now()
-        if (_now >= nextDayTime) {                                                      // If time passed the next Day time
-            if (currentDay >= daysPerEra) {                                             // If time passed the next Era time
-                currentEra += 1; currentDay = 0;                                        // Increment Era, reset Day
-                nextEraTime = _now + (secondsPerDay * daysPerEra);                      // Set next Era time
-                emission = getNextEraEmission();                                        // Get correct emission
-                mapEra_Emission[currentEra] = emission;                                 // Map emission to Era
-                emit NewEra(currentEra, emission, nextEraTime);                         // Emit Event
+        if (_now >= nextDayTime) {                                                          // If time passed the next Day time
+            if (currentDay >= daysPerEra) {                                                 // If time passed the next Era time
+                currentEra += 1; currentDay = 0;                                            // Increment Era, reset Day
+                nextEraTime = _now + (secondsPerDay * daysPerEra);                          // Set next Era time
+                emission = getNextEraEmission();                                            // Get correct emission
+                mapEra_Emission[currentEra] = emission;                                     // Map emission to Era
+                emit NewEra(currentEra, emission, nextEraTime, totalBurnt);                 // Emit Event
             }
-            currentDay += 1;                                                            // Increment Day
-            nextDayTime = _now + secondsPerDay;                                         // Set next Day time
-            emission = getDayEmission();                                                // Check daily Dmission
-            mapEraDay_Emission[currentEra][currentDay] = emission;                      // Map emission to Day
-            mapEraDay_EmissionRemaining[currentEra][currentDay] = emission;             // Map emission to Day
-            emit NewDay(currentEra, currentDay, nextDayTime);                           // Emit Event
+            currentDay += 1;                                                                // Increment Day
+            nextDayTime = _now + secondsPerDay;                                             // Set next Day time
+            emission = getDayEmission();                                                    // Check daily Dmission
+            mapEraDay_Emission[currentEra][currentDay] = emission;                          // Map emission to Day
+            mapEraDay_EmissionRemaining[currentEra][currentDay] = emission;                 // Map emission to Day
+            emit NewDay(currentEra, currentDay, nextDayTime, 
+            mapEraDay_Units[currentEra][currentDay-1]);                                     // Emit Event
         }
     }
     // Calculate Era emission
