@@ -17,7 +17,7 @@ const Era = 1; const Day = 1
 
 // Test Params
 // totalSupply = 8190
-// daysPerEra = 2
+// daysPerEra = 2, secondsPerDay = 1
 // upgradeHeight = 1
 
 contract("Vether", function(accounts) {

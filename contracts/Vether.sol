@@ -72,7 +72,7 @@ contract Vether is ERC20 {
     // Constructor
     constructor(address _vetherOld) public {
         vetherOld = _vetherOld;                                                             // Old Vether
-        upgradeHeight = 1;                                                                  // Height at which to upgrade
+        upgradeHeight = 5;                                                                  // Height at which to upgrade
         name = VetherOld(vetherOld).name(); 
         symbol = VetherOld(vetherOld).symbol(); 
         decimals = VetherOld(vetherOld).decimals(); 
