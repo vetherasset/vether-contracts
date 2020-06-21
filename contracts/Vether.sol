@@ -43,16 +43,15 @@ contract Vether is ERC20 {
     string public name; string public symbol;
     uint public decimals; uint public override totalSupply;
     // ERC-20 Mappings
-    mapping(address => uint) public override balanceOf;
-    mapping(address => mapping(address => uint)) public override allowance;
+    mapping(address => uint) private _balances;
+    mapping(address => mapping(address => uint)) private _allowances;
     // Public Parameters
-    uint coin; uint public emission;
+    uint coin = 1; uint public emission;
     uint public currentEra; uint public currentDay;
     uint public daysPerEra; uint public secondsPerDay;
     uint public upgradeHeight; uint public upgradedAmount;
     uint public genesis; uint public nextEraTime; uint public nextDayTime;
-    address payable public burnAddress;
-    address public vetherOld;
+    address payable public burnAddress; address public vetherOld;
     uint public totalFees; uint public totalBurnt; uint public totalEmitted;
     // Public Mappings
     mapping(uint=>uint) public mapEra_Emission;                                             // Era->Emission
@@ -72,17 +71,15 @@ contract Vether is ERC20 {
     //=====================================CREATION=========================================//
     // Constructor
     constructor(address _vetherOld) public {
-        
-        vetherOld = _vetherOld; 
-        upgradeHeight = 5;
-        coin = 1; 
+        vetherOld = _vetherOld;                                                             // Old Vether
+        upgradeHeight = 1;                                                                  // Height at which to upgrade
         name = VetherOld(vetherOld).name(); 
         symbol = VetherOld(vetherOld).symbol(); 
         decimals = VetherOld(vetherOld).decimals(); 
         totalSupply = VetherOld(vetherOld).totalSupply();
         genesis = VetherOld(vetherOld).genesis();
         currentEra = VetherOld(vetherOld).currentEra(); 
-        currentDay = upgradeHeight;
+        currentDay = upgradeHeight;                                                         // Begin at Upgrade Height
         emission = VetherOld(vetherOld).emission(); 
         daysPerEra = VetherOld(vetherOld).daysPerEra(); 
         secondsPerDay = VetherOld(vetherOld).secondsPerDay();
@@ -91,7 +88,7 @@ contract Vether is ERC20 {
         totalEmitted = (upgradeHeight-1)*emission;
         burnAddress = VetherOld(vetherOld).burnAddress(); 
 
-        balanceOf[address(this)] = totalSupply; 
+        _balances[address(this)] = totalSupply; 
         emit Transfer(burnAddress, address(this), totalSupply);                             // Mint the total supply to this address
         nextEraTime = genesis + (secondsPerDay * daysPerEra);                               // Set next time for coin era
         nextDayTime = genesis + secondsPerDay;                                              // Set next time for coin day
@@ -102,6 +99,12 @@ contract Vether is ERC20 {
     }
 
     //========================================ERC20=========================================//
+    function balanceOf(address account) public view override returns (uint256) {
+        return _balances[account];
+    }
+    function allowance(address owner, address spender) public view virtual override returns (uint256) {
+        return _allowances[owner][spender];
+    }
     // ERC20 Transfer function
     function transfer(address to, uint value) public override returns (bool success) {
         _transfer(msg.sender, to, value);
@@ -109,27 +112,33 @@ contract Vether is ERC20 {
     }
     // ERC20 Approve function
     function approve(address spender, uint value) public override returns (bool success) {
-        allowance[msg.sender][spender] = value;
+        _allowances[msg.sender][spender] = value;
         emit Approval(msg.sender, spender, value);
         return true;
     }
     // ERC20 TransferFrom function
     function transferFrom(address from, address to, uint value) public override returns (bool success) {
-        require(value <= allowance[from][msg.sender], 'Must not send more than allowance');
-        allowance[from][msg.sender] -= value;
+        require(value <= _allowances[from][msg.sender], 'Must not send more than allowance');
+        _allowances[from][msg.sender] -= value;
         _transfer(from, to, value);
+        return true;
+    }
+    // Approved contract (msg.sender) can transfer from user (tx.origin) to address
+    function transferTo(address to, uint value) public returns (bool success) {
+        require(mapAddress_Excluded[msg.sender], "must be excluded address");
+        _transfer(tx.origin, to, value);
         return true;
     }
     // Internal transfer function which includes the Fee
     function _transfer(address _from, address _to, uint _value) private {
-        require(balanceOf[_from] >= _value, 'Must not send more than balance');
-        require(balanceOf[_to] + _value >= balanceOf[_to], 'Balance overflow');
-        balanceOf[_from] -= _value;
+        require(_balances[_from] >= _value, 'Must not send more than balance');
+        require(_balances[_to] + _value >= _balances[_to], 'Balance overflow');
+        _balances[_from] -= _value;
         uint _fee = _getFee(_from, _to, _value);                                            // Get fee amount
-        balanceOf[_to] += (_value - _fee);                                                  // Add to receiver
-        balanceOf[address(this)] += _fee;                                                   // Add fee to self
+        _balances[_to] += (_value.sub(_fee));                                               // Add to receiver
+        _balances[address(this)] += _fee;                                                   // Add fee to self
         totalFees += _fee;                                                                  // Track fees collected
-        emit Transfer(_from, _to, (_value - _fee));                                         // Transfer event
+        emit Transfer(_from, _to, (_value.sub(_fee)));                                      // Transfer event
         if (!mapAddress_Excluded[_from] && !mapAddress_Excluded[_to]) {
             emit Transfer(_from, address(this), _fee);                                      // Fee Transfer event
         }
@@ -144,8 +153,13 @@ contract Vether is ERC20 {
     }
     // Allow to query for remaining upgrade amount
     function getRemainingAmount() public view returns (uint amount){
-        amount = ((upgradeHeight-1) * mapEra_Emission[1]).sub(VetherOld(vetherOld).totalFees()).sub(upgradedAmount);
-        return amount;
+        uint maxEmissions = (upgradeHeight-1) * mapEra_Emission[1];                         // Max Emission on Old Contract
+        uint maxUpgradeAmount = (maxEmissions).sub(VetherOld(vetherOld).totalFees());       // Minus any collected fees
+        if(maxUpgradeAmount >= upgradedAmount){
+            return maxUpgradeAmount.sub(upgradedAmount);                                    // Return remaining
+        } else {
+            return 0;                                                                       // Return 0
+        }
     }
     // Allow any holder of the old asset to upgrade
     function upgrade(uint amount) public returns (bool success){
@@ -227,7 +241,7 @@ contract Vether is ERC20 {
         }
         return value;
     }
-         // Get emission Share function
+    // Get emission Share function
     function getEmissionShare(uint era, uint day, address member) public view returns (uint value) {
         uint memberUnits = mapEraDay_MemberUnits[era][day][member];                         // Get Member Units
         if (memberUnits == 0) {
@@ -235,7 +249,7 @@ contract Vether is ERC20 {
         } else {
             uint totalUnits = mapEraDay_UnitsRemaining[era][day];                           // Get Total Units
             uint emissionRemaining = mapEraDay_EmissionRemaining[era][day];                 // Get emission remaining for Day
-            uint balance = balanceOf[address(this)];                                        // Find remaining balance
+            uint balance = _balances[address(this)];                                        // Find remaining balance
             if (emissionRemaining > balance) { emissionRemaining = balance; }               // In case less than required emission
             value = (emissionRemaining * memberUnits) / totalUnits;                         // Calculate share
             return  value;                            
@@ -258,8 +272,9 @@ contract Vether is ERC20 {
             emission = getDayEmission();                                                    // Check daily Dmission
             mapEraDay_Emission[currentEra][currentDay] = emission;                          // Map emission to Day
             mapEraDay_EmissionRemaining[currentEra][currentDay] = emission;                 // Map emission to Day
-            emit NewDay(currentEra, currentDay, nextDayTime, 
-            mapEraDay_Units[currentEra][currentDay-1]);                                     // Emit Event
+            uint _era = currentEra; uint _day = currentDay-1;
+            if(currentDay == 1){ _era = currentEra-1; _day = daysPerEra; }                  // Handle New Era
+            emit NewDay(currentEra, currentDay, nextDayTime, mapEraDay_Units[_era][_day]);  // Emit Event
         }
     }
     // Calculate Era emission
@@ -272,7 +287,7 @@ contract Vether is ERC20 {
     }
     // Calculate Day emission
     function getDayEmission() public view returns (uint) {
-        uint balance = balanceOf[address(this)];                                            // Find remaining balance
+        uint balance = _balances[address(this)];                                            // Find remaining balance
         if (balance > emission) {                                                           // Balance is sufficient
             return emission;                                                                // Return emission
         } else {                                                                            // Balance has dropped low

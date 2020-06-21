@@ -300,7 +300,9 @@ function withdrawsNew() {
 
 		//console.log("balance", BN2Str(await vether.balanceOf(_acc)))
 
-	   let receipt = await vether.withdrawShare(_era, _day, { from: _acc })
+	   let tx = await vether.withdrawShare(_era, _day, { from: _acc })
+	   console.log('value', BN2Str(tx.receipt.logs[0].args.value))
+		console.log('valueRemaining', BN2Str(tx.receipt.logs[0].args.valueRemaining))
 
 	   let balBN = new BigNumber(await vether.balanceOf(_acc))
 	   assert.equal(balBN.toFixed(), _bal, "correct acc bal")
