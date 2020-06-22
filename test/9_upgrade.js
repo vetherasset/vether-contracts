@@ -44,6 +44,7 @@ contract("Upgrade Vether", async accounts => {
 	excludeVether()
 	withdraws(1, 2)
 	withdraws(1, 3)
+	previousOwners()
 	upgrade(acc0, 1)
 	sendEther() // 1-6
 	sendEther() // 1-7
@@ -53,9 +54,11 @@ contract("Upgrade Vether", async accounts => {
 	upgradeAcc(acc1)
 	transferNew()
 	withdraws(1, 6)
+	previousOwners()
 	upgradeAcc(acc0)
 	withdraws(1, 7)
-	upgradeFail(acc0)
+	previousOwners()
+	upgradeFinal(acc0)
 })
 
 
@@ -214,13 +217,35 @@ function excludeVether() {
 	})
 }
 
+function previousOwners() {
+	it('fails from non-deployer', async() => {
+		let owners = [acc0, acc1, acc2]
+		let ownership = [Emission, Emission/2, Emission/4]
+		TruffleAssert.reverts(vether.addOwnership(owners, ownership, {from: acc1}))
+		
+		console.log('ownership acc0', BN2Str(await vether.mapPreviousOwnership(acc0)))
+		console.log('ownership acc1', BN2Str(await vether.mapPreviousOwnership(acc1)))
+		console.log('ownership acc2', BN2Str(await vether.mapPreviousOwnership(acc2)))
+	})
+	it('adds previous owners', async() => {
+		let owners = [acc0, acc1, acc2]
+		let acc0Own = await vetherOld.balanceOf(acc0)
+		let acc1Own = await vetherOld.balanceOf(acc1)
+		let acc2Own = await vetherOld.balanceOf(acc2)
+		let ownership = [acc0Own, acc1Own, acc2Own]
+		await vether.addOwnership(owners, ownership)
+		console.log('ownership acc0', BN2Str(await vether.mapPreviousOwnership(acc0)))
+		console.log('ownership acc1', BN2Str(await vether.mapPreviousOwnership(acc1)))
+		console.log('ownership acc2', BN2Str(await vether.mapPreviousOwnership(acc2)))
+	})
+}
+
 function upgrade(_acc, _amount) {
 
 	it("fails an upgrade for too much", async () => {
-
+		console.log('ownership acc', BN2Str(await vether.mapPreviousOwnership(_acc)))
 		await vetherOld.approve(vether.address, '10000000', {from:_acc})
 		TruffleAssert.reverts(vether.upgrade('10000000'))
-
 	})
 
 	it("allows a Vether upgrade before New Vether starts", async () => {
@@ -329,10 +354,17 @@ function withdrawsNew() {
 
 function upgradeAcc(_acc) {
 
+	it("fails an upgrade for too much", async () => {
+		console.log('ownership acc', BN2Str(await vether.mapPreviousOwnership(_acc)))
+		await vetherOld.approve(vether.address, '10000000', {from:_acc})
+		TruffleAssert.reverts(vether.upgrade('10000000'))
+	})
+
 	it(`allows ${_acc} to upgrade all from VetherOld to new Vether`, async () => {
 		let balanceLeft = await vetherOld.balanceOf(_acc)
 		let upgradedAmount = getBN(await vether.upgradedAmount())
 		console.log('balanceLeft', BN2Str(balanceLeft))
+		console.log('ownership acc', BN2Str(await vether.mapPreviousOwnership(_acc)))
 		let remaining = getBN(await vether.getRemainingAmount())
 		console.log('remainig', BN2Str(remaining))
 		console.log('balanceBurnStart', BN2Str(await vetherOld.balanceOf(burnAddress)))
@@ -385,23 +417,18 @@ function transferNew() {
 	})
   }
 
-  function upgradeFail(_acc) {
-
-	it("fails an upgrade for too much", async () => {
-		let balanceLeft = await vetherOld.balanceOf(_acc)
-		await vetherOld.approve(vether.address, balanceLeft, {from:_acc})
-		TruffleAssert.reverts(vether.upgrade(balanceLeft))
-
-		let claimLeft = await vetherOld.balanceOf(_acc)
-		await vetherOld.approve(vether.address, balanceLeft, {from:_acc})
-		TruffleAssert.reverts(vether.upgrade(balanceLeft))
-
-	})
+  function upgradeFinal(_acc) {
 
 	it("passes an upgrade for the remaining", async () => {
-
+		console.log('ownership acc', BN2Str(await vether.mapPreviousOwnership(_acc)))
 		let claimLeft = await vether.getRemainingAmount()
-		await vether.upgrade(claimLeft)
+		let balanceLeft = await vetherOld.balanceOf(_acc)
+		await vetherOld.approve(vether.address, balanceLeft, {from:_acc})
+		await vether.upgrade(balanceLeft)
+		let balanceAfter = getBN(await vetherOld.balanceOf(_acc))
+		console.log('claimLeft', BN2Str(claimLeft))
+		console.log('balanceLeft', BN2Str(balanceLeft))
+		assert.equal(BN2Str(claimLeft), BN2Str((getBN(balanceLeft)).minus(balanceAfter)))
 
 	})
 }
