@@ -41,7 +41,7 @@ contract("Upgrade Vether", async accounts => {
 	sendEtherNewFail()
 	withdraws(1,1)
 	transfer()
-	excludeVether()
+	excludeVether() //burnAddress
 	withdraws(1, 2)
 	withdraws(1, 3)
 	previousOwners()
@@ -157,7 +157,7 @@ function withdraws(_era, _day) {
         //console.log("vetherOld Balance", vetherOldBal1.toNumber());
 	
       let balBNFinal = new BigNumber(await vetherOld.balanceOf(_acc))
-      //console.log('Final User Balance: ', balBNFinal.toFixed())
+      console.log('Final User Balance: ', balBNFinal.toFixed())
  })
 }
 
@@ -242,17 +242,18 @@ function previousOwners() {
 
 function upgrade(_acc, _amount) {
 
-	it("fails an upgrade for too much", async () => {
-		console.log('ownership acc', BN2Str(await vether.mapPreviousOwnership(_acc)))
-		await vetherOld.approve(vether.address, '10000000', {from:_acc})
-		TruffleAssert.reverts(vether.upgrade('10000000'))
-	})
+	// it("fails an upgrade for too much", async () => {
+	// 	console.log('ownership acc', BN2Str(await vether.mapPreviousOwnership(_acc)))
+	// 	await vetherOld.approve(vether.address, '10000000', {from:_acc})
+	// 	TruffleAssert.reverts(vether.upgrade('10000000'))
+	// })
 
 	it("allows a Vether upgrade before New Vether starts", async () => {
 		let remaining = getBN(await vether.getRemainingAmount())
 		let upgradedAmount = getBN(await vether.upgradedAmount())
-		//console.log(BN2Str(remaining))
+		console.log('_amount', BN2Str(_amount))
 		await vetherOld.approve(vether.address, _amount, {from: _acc})
+		console.log('allowance', BN2Str(await vetherOld.allowance(_acc, vether.address)))
 		await vether.upgrade(_amount, {from: _acc})
 		let balanceBurn = await vetherOld.balanceOf(burnAddress)
 		// //console.log(BN2Str(balanceBurn))
@@ -267,6 +268,9 @@ function upgrade(_acc, _amount) {
 		const remainingNew = BN2Str(await vether.getRemainingAmount())
 		assert.equal(remainingNew, '8188')
 		console.log('remainingNew', remainingNew)
+		console.log('balance', BN2Str(await vether.balanceOf(_acc)))
+		console.log('holders', BN2Str(await vether.holders()))
+		console.log('holder0', await vether.holderArray(0))
 
 	})
 }
@@ -291,9 +295,13 @@ function sendEtherNewPass() {
 
 		await vether.send(sendEth, { from: _acc})
 		let tx = await vether.send(sendEth, { from: _acc})
-		let tx2 = await vether.send(sendEth, { from: _acc})
+		let tx2 = await vether.send(sendEth, { from: acc1})
 		console.log('units', BN2Str(tx2.receipt.logs[0].args.units))
 		console.log('dailyTotal', BN2Str(tx2.receipt.logs[0].args.dailyTotal))
+		console.log('members', BN2Str(await vether.mapEraDay_MemberCount(_era, _day)))
+		console.log('members0', await vether.mapEraDay_Members(_era, _day, '0'))
+
+		console.log('previousDayMembers', BN2Str(tx2.receipt.logs[1].args.previousDayMembers))
 
 		_era2 = await vether.currentEra(); _day2 = await vether.currentDay();
 		console.log('Era2: %s - Day2: %s', _era2, _day2)
@@ -311,7 +319,6 @@ function sendEtherNewPass() {
 		assert.equal(valueLeft, _emission, "the value left is correct");
 
 		let vetherBal1 = new BigNumber(await vether.balanceOf(vether.address)).toFixed();
-
     })
 }
 
@@ -326,8 +333,9 @@ function withdrawsNew() {
 		//console.log("balance", BN2Str(await vether.balanceOf(_acc)))
 
 	   let tx = await vether.withdrawShare(_era, _day, { from: _acc })
-	   console.log('value', BN2Str(tx.receipt.logs[0].args.value))
-		console.log('valueRemaining', BN2Str(tx.receipt.logs[0].args.valueRemaining))
+	   console.log('value', BN2Str(tx.receipt.logs[1].args.value))
+		console.log('valueRemaining', BN2Str(tx.receipt.logs[1].args.valueRemaining))
+		// console.log(tx.receipt.logs)
 
 	   let balBN = new BigNumber(await vether.balanceOf(_acc))
 	   assert.equal(balBN.toFixed(), _bal, "correct acc bal")
@@ -349,16 +357,19 @@ function withdrawsNew() {
    
 	 let balBNFinal = new BigNumber(await vether.balanceOf(_acc))
 	 //console.log('Final User Balance: ', balBNFinal.toFixed())
+
+	 console.log('holders', BN2Str(await vether.holders()))
+	 console.log('holder0', await vether.holderArray(0))
 })
 }
 
 function upgradeAcc(_acc) {
 
-	it("fails an upgrade for too much", async () => {
-		console.log('ownership acc', BN2Str(await vether.mapPreviousOwnership(_acc)))
-		await vetherOld.approve(vether.address, '10000000', {from:_acc})
-		TruffleAssert.reverts(vether.upgrade('10000000'))
-	})
+	// it("fails an upgrade for too much", async () => {
+	// 	console.log('ownership acc', BN2Str(await vether.mapPreviousOwnership(_acc)))
+	// 	await vetherOld.approve(vether.address, '10000000', {from:_acc})
+	// 	TruffleAssert.reverts(vether.upgrade('10000000'))
+	// })
 
 	it(`allows ${_acc} to upgrade all from VetherOld to new Vether`, async () => {
 		let balanceLeft = await vetherOld.balanceOf(_acc)
@@ -383,7 +394,8 @@ function upgradeAcc(_acc) {
 
 		let newUpgradedAmount = BN2Str(await vether.upgradedAmount())
 		assert.equal(newUpgradedAmount, BN2Str(upgradedAmount.plus(balanceLeft)))
-
+		console.log('holders', BN2Str(await vether.holders()))
+	 	console.log('holder0', await vether.holderArray(0))
 	})
 }
 
@@ -399,6 +411,7 @@ function transferNew() {
 	  let r = await vether.transfer(acc1, deposit, { from: acc0 })
 	  let r2 = await vether.transfer(acc1, deposit, { from: acc0 })
 	  let r3 = await vether.transfer(acc0, deposit, { from: acc1 })
+	//   console.log(r.receipt.logs)
   
 	  let acc0Bal2 = await vether.balanceOf(acc0);
 	  let acc1Bal2 = await vether.balanceOf(acc1);
@@ -413,6 +426,8 @@ function transferNew() {
 	  let vetherFees = await vether.totalFees();
 	  //console.log("Fees:", vetherFees.toNumber());
 	  assert.equal(vetherFees.toNumber(), "3", "correct vetherFees")
+	  console.log('holders', BN2Str(await vether.holders()))
+	 	console.log('holder0', await vether.holderArray(0))
   
 	})
   }
@@ -429,6 +444,7 @@ function transferNew() {
 		console.log('claimLeft', BN2Str(claimLeft))
 		console.log('balanceLeft', BN2Str(balanceLeft))
 		assert.equal(BN2Str(claimLeft), BN2Str((getBN(balanceLeft)).minus(balanceAfter)))
-
+		console.log('holders', BN2Str(await vether.holders()))
+	 	console.log('holder0', await vether.holderArray(1))
 	})
 }

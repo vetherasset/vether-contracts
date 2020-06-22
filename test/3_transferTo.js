@@ -118,7 +118,7 @@ function withdrawsNew() {
 function depositPoolsFail(){
   
     it("it should fail deposit", async () => {
-		TruffleAssert.reverts(pools.deposit(1), "must be excluded address")
+		TruffleAssert.reverts(pools.deposit(1), "Must not send more than allowance")
     });
   }
 

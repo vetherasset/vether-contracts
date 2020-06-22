@@ -1,7 +1,7 @@
 pragma solidity 0.6.4;
 
 interface Vether {
-    function transferTo(address to, uint value) external returns (bool success);
+    function transferFrom(address from, address to, uint value) external returns (bool success);
 	function transfer(address to, uint value) external returns (bool success);
 	}
 
@@ -16,7 +16,7 @@ contract Pools {
 	}
 
 	function deposit (uint amount) public {	
-		Vether(vether).transferTo(address(this), amount);
+		Vether(vether).transferFrom(msg.sender, address(this), amount);
 		balance += amount;
 	}
 	
