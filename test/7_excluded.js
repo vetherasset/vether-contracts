@@ -142,7 +142,7 @@ function addExcluded() {
     // console.log("Account0 Balance: ", acc0Bal0.toNumber());
     assert.equal(acc0Bal0.toNumber(), "4094", "correct acc0 balance")
 
-    let rx = await coin.addExcluded(acc0, { from: acc0 })
+    let rx = await coin.changeExcluded(acc0, { from: acc0 })
 
     let acc0Bal1 = await coin.balanceOf(acc0);
     let acc1Bal1 = await coin.balanceOf(acc1);

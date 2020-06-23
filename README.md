@@ -14,6 +14,11 @@ GasMine
 
 https://etherscan.io/address/0x8a9c1cd4074751e94f2c4075d333fb3226ca9378
 
+
+VetherNew : 0xc3e934cc79d0eE0FE7BE206914A9e5E5f87192B4
+
+Uniswap V2: 0x0b487517c8c5cae9C7d28D3099907130a6cCB40E
+
 ### ERC-20
 Vether is an ERC-20 contract that implements the following interface:
 ```Solidity

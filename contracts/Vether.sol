@@ -71,13 +71,13 @@ contract Vether is ERC20 {
     event NewEra(uint era, uint emission, uint time, uint totalBurnt);
     event NewDay(uint era, uint day, uint time, uint previousDayTotal, uint previousDayMembers);
     event Burn(address indexed payer, address indexed member, uint era, uint day, uint units, uint dailyTotal);
-    event Withdrawal(address indexed caller, address indexed member, uint era, uint day, uint value, uint valueRemaining);
+    event Withdrawal(address indexed caller, address indexed member, uint era, uint day, uint value, uint vetherRemaining);
 
     //=====================================CREATION=========================================//
     // Constructor
     constructor(address _vether1) public {
         vether1 = _vether1;                                                                 // First Vether
-        upgradeHeight = 5;                                                                  // Height at which to upgrade
+        upgradeHeight = 1;                                                                  // Height at which to upgrade
         name = VETH(vether1).name(); 
         symbol = VETH(vether1).symbol(); 
         decimals = VETH(vether1).decimals(); 
@@ -173,12 +173,12 @@ contract Vether is ERC20 {
         if(mapPreviousOwnership[msg.sender] < amount){_amount = mapPreviousOwnership[msg.sender];} // Upgrade as much as possible
         uint remainingAmount = getRemainingAmount();
         if(remainingAmount < amount){_amount = remainingAmount;}                            // Handle final amount
-        upgradedAmount += _amount; mapPreviousOwnership[msg.sender] -= _amount;             // Update mappings                                           // Record upgrade amount
+        upgradedAmount += _amount; mapPreviousOwnership[msg.sender] -= _amount;             // Update mappings
         ERC20(vether1).transferFrom(msg.sender, burnAddress, _amount);                      // Must collect & burn tokens
         _transfer(address(this), msg.sender, _amount);                                      // Send to owner
         return true;
     }
-    function addSnapshot(address[] memory owners, uint[] memory ownership) public{
+    function snapshot(address[] memory owners, uint[] memory ownership) public{
         require(msg.sender == deployer);
         for(uint i = 0; i<owners.length; i++){
             mapPreviousOwnership[owners[i]] = ownership[i];
