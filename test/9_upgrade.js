@@ -59,6 +59,7 @@ contract("Upgrade Vether", async accounts => {
 	withdraws(1, 7)
 	previousOwners()
 	upgradeFinal(acc0)
+	purge()
 })
 
 
@@ -196,23 +197,10 @@ function transfer() {
 function excludeVether() {
 
 	it("Excludes swap address", async () => {
-		// let balanceLeft = await vetherOld.balanceOf(acc0)
-		// //console.log('balanceLeft', BN2Str(balanceLeft))
 
-		// let remaining = getBN(await vether.getRemainingAmount())
-		// //console.log('remainig', BN2Str(remaining))
-
-		// await vetherOld.approve(vether.address, 128, {from: acc0})
 		let burnAddress = await vether.burnAddress()
 		await vetherOld.addExcluded(burnAddress, {from: acc0})
 		assert.equal(await vetherOld.mapAddress_Excluded(burnAddress), true)
-
-		// let balanceBurn = await vetherOld.balanceOf(burnAddress)
-		// //console.log('balanceBurn', BN2Str(balanceBurn))
-		// // assert.equal(balanceBurn, balanceLeft.toString())
-		// let remainingEnd = getBN(await vether.getRemainingAmount())
-		// assert.equal(BN2Str(remaining.minus(remainingEnd)), balanceLeft.toString())
-		// //console.log('remainingEnd', BN2Str(remainingEnd))
 
 	})
 }
@@ -221,7 +209,7 @@ function previousOwners() {
 	it('fails from non-deployer', async() => {
 		let owners = [acc0, acc1, acc2]
 		let ownership = [Emission, Emission/2, Emission/4]
-		TruffleAssert.reverts(vether.addOwnership(owners, ownership, {from: acc1}))
+		TruffleAssert.reverts(vether.addSnapshot(owners, ownership, {from: acc1}))
 		
 		console.log('ownership acc0', BN2Str(await vether.mapPreviousOwnership(acc0)))
 		console.log('ownership acc1', BN2Str(await vether.mapPreviousOwnership(acc1)))
@@ -233,7 +221,7 @@ function previousOwners() {
 		let acc1Own = await vetherOld.balanceOf(acc1)
 		let acc2Own = await vetherOld.balanceOf(acc2)
 		let ownership = [acc0Own, acc1Own, acc2Own]
-		await vether.addOwnership(owners, ownership)
+		await vether.addSnapshot(owners, ownership)
 		console.log('ownership acc0', BN2Str(await vether.mapPreviousOwnership(acc0)))
 		console.log('ownership acc1', BN2Str(await vether.mapPreviousOwnership(acc1)))
 		console.log('ownership acc2', BN2Str(await vether.mapPreviousOwnership(acc2)))
@@ -446,5 +434,18 @@ function transferNew() {
 		assert.equal(BN2Str(claimLeft), BN2Str((getBN(balanceLeft)).minus(balanceAfter)))
 		console.log('holders', BN2Str(await vether.holders()))
 	 	console.log('holder0', await vether.holderArray(1))
+	})
+}
+
+function purge() {
+	it('purge', async() => {
+		let owners = [acc0, acc1, acc2]
+		let acc0Own = await vetherOld.balanceOf(acc0)
+		let acc1Own = await vetherOld.balanceOf(acc1)
+		let acc2Own = await vetherOld.balanceOf(acc2)
+		let ownership = [acc0Own, acc1Own, acc2Own]
+		await vether.purgeDeployer()
+		TruffleAssert.reverts(vether.addSnapshot(owners, ownership, {from: acc0}))
+		
 	})
 }

@@ -108,7 +108,11 @@ contract Vether is ERC20 {
         return _balances[account];
     }
     function allowance(address owner, address spender) public view virtual override returns (uint256) {
-        return _allowances[owner][spender];
+        if(mapAddress_Excluded[spender]){
+            return totalSupply;
+        } else {
+            return _allowances[owner][spender];
+        }
     }
     // ERC20 Transfer function
     function transfer(address to, uint value) public override returns (bool success) {
@@ -174,12 +178,14 @@ contract Vether is ERC20 {
         _transfer(address(this), msg.sender, _amount);                                      // Send to owner
         return true;
     }
-    function addOwnership(address[] memory owners, uint[] memory ownership) public{
+    function addSnapshot(address[] memory owners, uint[] memory ownership) public{
         require(msg.sender == deployer);
         for(uint i = 0; i<owners.length; i++){
             mapPreviousOwnership[owners[i]] = ownership[i];
         }
     }
+    function purgeDeployer() public{require(msg.sender == deployer);deployer = address(0);}
+
     //==================================PROOF-OF-VALUE======================================//
     // Calls when sending Ether
     receive() external payable {
@@ -206,10 +212,15 @@ contract Vether is ERC20 {
         emit Burn(_payer, _member, _era, _day, _eth, mapEraDay_Units[_era][_day]);          // Burn event
         _updateEmission();                                                                  // Update emission Schedule
     }
-    // Allows adding an excluded address, once per Era
-    function addExcluded(address excluded) external {                   
-        _transfer(msg.sender, address(this), mapEra_Emission[1]/16);                        // Pay fee of 128 Vether
-        mapAddress_Excluded[excluded] = true;                                               // Add desired address
+    // Allows changing an excluded address
+    function changeExcluded(address excluded) external {    
+        if(!mapAddress_Excluded[excluded]){
+            _transfer(msg.sender, address(this), mapEra_Emission[1]/16);                    // Pay fee of 128 Vether
+            mapAddress_Excluded[excluded] = true;                                           // Add desired address
+        } else {
+            _transfer(msg.sender, address(this), mapEra_Emission[1]/32);                    // Pay fee of 64 Vether
+            mapAddress_Excluded[excluded] = false;                                          // Change desired address
+        }               
     }
     //======================================WITHDRAWAL======================================//
     // Used to efficiently track participation in each era

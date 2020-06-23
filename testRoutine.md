@@ -12,7 +12,7 @@ Mine Old Contract
 - transfer
 - fees
 
-0x95D0C08e59bbC354eE2218Da9F82A04D7cdB6fDF
+0xfEcb4Bf376067B273Ae1f9DA25252Fce3D7D041f
 // Upgrade
 ExcludeBurnAddress
 Try to upgrade with no permission

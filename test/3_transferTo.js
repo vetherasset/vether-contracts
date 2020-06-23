@@ -23,6 +23,9 @@ contract("Vether", function(accounts) {
 	withdrawsNew()
 	depositPoolsFail()
 	excludeVether()
+	unExcludeVether()
+	depositPoolsFail()
+	excludeVether()
     depositPools()
   })
 
@@ -126,8 +129,21 @@ function excludeVether() {
 
 	it("Excludes address", async () => {
 
-		await vether.addExcluded(pools.address, {from: acc0})
+		await vether.changeExcluded(pools.address, {from: acc0})
 		assert.equal(await vether.mapAddress_Excluded(pools.address), true)
+
+		assert.equal(BN2Str(await vether.allowance(acc0, pools.address)), 
+		BN2Str(await vether.totalSupply()))
+
+	})
+}
+
+function unExcludeVether() {
+
+	it("unExcludes address", async () => {
+
+		await vether.changeExcluded(pools.address, {from: acc0})
+		assert.equal(await vether.mapAddress_Excluded(pools.address), false)
 
 	})
 }
