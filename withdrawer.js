@@ -3,6 +3,7 @@ const ethers = require('ethers');
 const BigNumber = require('bignumber.js')
 const VETHER = require('./artifacts/VetherOld.json')
 const fs = require('fs')
+const axios = require('axios')
 
 const addr = () => {
 	return '0x31Bb711de2e457066c6281f231fb473FC5c2afd3'
@@ -23,6 +24,9 @@ let arrayDays = []; let arrayShares = []; let arrayTx = [];
 var cycles; var txCount;
 var times = { 'start': "", 'cycle': "", 'query':"" };
 
+var addresses = [];
+let arrayAddress = []
+
 const updateDetails = async () => {
 	const cycleTime = new Date(Date.now()).toLocaleTimeString("en-gb")
 	console.log('updating details at time:', cycleTime)
@@ -39,12 +43,22 @@ const updateDetails = async () => {
 	currentEra = (new BigNumber(await contract.currentEra())).toFixed()
 	currentDay = (new BigNumber(await contract.currentDay())).toFixed()
 	nextDayTime = (new BigNumber(await contract.nextDayTime())).toFixed()
-    console.log('era:%s - day:%s - NextDay:%s', currentEra, currentDay, nextDayTime)
-    
-    const data = fs.readFileSync('./data/balances.json', 'utf8')
-    const balances  = JSON.parse(data)
-    owners = balances.owners
-    console.log(owners.length)
+	console.log('era:%s - day:%s - NextDay:%s', currentEra, currentDay, nextDayTime)
+
+	// const apiKey = process.env.ETHPLORER_API
+    // const baseURL = 'https://api.ethplorer.io/getAddressTransactions/0x8a9c1cd4074751e94f2c4075d333fb3226ca9378?apiKey='
+    // console.log(baseURL + apiKey + '&limit=50')
+	// const response = await axios.get(baseURL + apiKey + '&limit=50')
+	// console.log(response.data)
+	// addresses = response.data.map(item => item.from)
+	
+	// for(var i = 0; i < addresses.length; i++){
+	// 	let share = {'address': addresses[i], 'withdrawn': false, 'tx': "null"}
+	// 	arrayAddress.push(share)
+	// }
+	// console.log(arrayAddress)
+	
+    // await fs.writeFileSync(`./data/arrayAddress-start.json`, JSON.stringify(arrayAddress), 'utf8')
 }
 
 const checkShare = async (address) => {
@@ -108,8 +122,61 @@ const claimShare = async () => {
 			}
 		}
     }
-    
-    
+}
+
+const claimShare1 = async (arrayAddress) => {
+    console.log('claiming shares 1')
+	let day = 44
+	for(var i = 0; i < arrayAddress.length; i++){
+		console.log('withdrawn', arrayAddress[i].withdrawn)
+		if (arrayAddress[i].withdrawn == false) {
+			console.log(1, day, arrayAddress[i].address)
+			let value = await contract.getEmissionShare(1, day, arrayAddress[i].address);
+			console.log('value', +value)
+			if(+value>0){
+				console.log("withdrawing")
+				let tx = await contract.withdrawShareForMember(1, day, arrayAddress[i].address);
+				console.log(tx.hash);
+				await tx.wait();
+				let share = {'address': arrayAddress[i].address, 'withdrawn': true, 'tx': tx.hash}
+				// let share = {'address': arrayAddress[i].address, 'withdrawn': true, 'tx': 'test'}
+				arrayAddress[i] = share
+				await fs.writeFileSync('./data/arrayAddress-final.json', JSON.stringify(arrayAddress), 'utf8')
+			}
+			
+		}
+	}
+}
+
+
+const claimShareBalance = async () => {
+	console.log('claiming shares 1')
+	const data = fs.readFileSync('./data/export.csv', 'utf8')
+	var owners = data.split(/\r?\n/);
+	// console.log(owners)
+    // const balances  = JSON.parse(data)
+    // const owners = balances.owners
+	let day = 44
+	for(var i = 0; i < owners.length; i++){
+
+		// console.log('withdrawn', arrayAddress[i].withdrawn)
+		// if (arrayAddress[i].withdrawn == false) {
+			console.log(1, day, owners[i])
+			let value = await contract.getEmissionShare(1, day, owners[i]);
+			console.log('value', +value)
+			if(+value>0){
+				console.log("withdrawing")
+				let tx = await contract.withdrawShareForMember(1, day, owners[i]);
+				console.log(tx.hash);
+				await tx.wait();
+				// let share = {'address': owners[i].address, 'withdrawn': true, 'tx': tx.hash}
+				// let share = {'address': arrayAddress[i].address, 'withdrawn': true, 'tx': 'test'}
+				// owners[i] = share
+				// await fs.writeFileSync('./data/arrayAddress-final.json', JSON.stringify(arrayAddress), 'utf8')
+			}
+			
+		// }
+	}
 }
 
 const fileSize = async () => {
@@ -126,12 +193,12 @@ const main = async () => {
 	// const startTime = new Date(Date.now()).toLocaleString("en-gb")
 	// times = { 'start': startTime, 'cycle': times.cycle, 'query': times.query  }
     await updateDetails()
-    // for(var i = 0; i < owners.length; i++){
-    //     await checkShare(owners[i])
-    // }
+    await claimShareBalance()
+	// await claimShare1(arrayAddress)
+
     // await fs.writeFileSync('./data/balanceArrayShares.json', JSON.stringify(arrayShares), 'utf8')
     
-    await claimShare()
+    // await claimShare()
     // await fileSize()
   }
 
