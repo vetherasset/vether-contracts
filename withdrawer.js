@@ -9,6 +9,10 @@ const addr = () => {
 	return '0x31Bb711de2e457066c6281f231fb473FC5c2afd3'
 }
 
+const addr2 = () => {
+    return '0x01217729940055011F17BeFE6270e6E59B7d0337'
+}
+
 const abi = () => {
 	return VETHER.abi
 }
@@ -36,7 +40,8 @@ const updateDetails = async () => {
 	minerAddress = signingKey.address
 	console.log('Address: ' + signingKey.address);
 	wallet = new ethers.Wallet(process.env.PAYER_KEY, provider);
-    contract = new ethers.Contract(addr(), abi(), wallet)
+	contract = new ethers.Contract(addr(), abi(), wallet)
+	contract2 = new ethers.Contract(addr2(), abi(), wallet)
     ethBalance = ethers.utils.formatEther(await provider.getBalance(minerAddress))
     console.log(ethBalance)
 
@@ -45,19 +50,23 @@ const updateDetails = async () => {
 	nextDayTime = (new BigNumber(await contract.nextDayTime())).toFixed()
 	console.log('era:%s - day:%s - NextDay:%s', currentEra, currentDay, nextDayTime)
 
-	//Holder Map
+	//Holder Map 2
 	// const apiKey = process.env.ETHPLORER_API
-    // const baseURL = 'https://api.ethplorer.io/getAddressTransactions/0x8a9c1cd4074751e94f2c4075d333fb3226ca9378?apiKey='
+    // const baseURL = 'https://api.ethplorer.io/getAddressTransactions/0x01217729940055011F17BeFE6270e6E59B7d0337?apiKey='
     // console.log(baseURL + apiKey + '&limit=50')
 	// const response = await axios.get(baseURL + apiKey + '&limit=50')
 	// console.log(response.data)
 	// addresses = response.data.map(item => item.from)
-	
 	// for(var i = 0; i < addresses.length; i++){
 	// 	let share = {'address': addresses[i], 'withdrawn': false, 'tx': "null"}
 	// 	arrayAddress.push(share)
 	// }
-	// console.log(arrayAddress)
+	// console.log(addresses)
+	// for(var i = 0; i<addresses.length; i++){
+	// 	await checkShare(addresses[i])
+	// 	await fs.writeFileSync(`./data/vether2Shares.json`, JSON.stringify(arrayShares), 'utf8')
+	// }
+	// await fs.writeFileSync(`./data/arrayAddress2.json`, JSON.stringify(arrayAddress), 'utf8')
 
 	// Etherscan map
 	// const baseURLES = 'http://api.etherscan.io/api?module=account&action=txlist&address=0x31Bb711de2e457066c6281f231fb473FC5c2afd3&startblock=0&endblock=99999999&sort=asc'
@@ -117,7 +126,7 @@ async function checkAll(address) {
 }
 
 async function checkEra(i, address) {
-	let indexContributed = (new BigNumber(await contract.getDaysContributedForEra(address, i))).toFixed()
+	let indexContributed = (new BigNumber(await contract2.getDaysContributedForEra(address, i))).toFixed()
 	console.log('Check currentEra: %s, currentDays contributed: %s', i, indexContributed)
 	for (var j = 1; j <= indexContributed; j++) {
 		console.log('checking index:%s', j-1)
@@ -129,10 +138,10 @@ async function checkDay(i, j, length, address) {
 	console.log("Checking currentEra %s, Index %s, currentDay %s", i, j, currentDay)
 	if (i < currentEra || (i == currentEra && j < length)) {
 		console.log(address, i, j)
-		let day = (new BigNumber(await contract.mapMemberEra_Days(address, i, j))).toFixed()
+		let day = (new BigNumber(await contract2.mapMemberEra_Days(address, i, j))).toFixed()
 		console.log('Day at index %s is: %s', j, day)
 		console.log(i, +day, address)
-		let share = ethers.utils.formatEther(await contract.getEmissionShare(i, +day, address))
+		let share = ethers.utils.formatEther(await contract2.getEmissionShare(i, +day, address))
 		console.log('share is', share)
 		if (share > 0) {
 			console.log(i, day, share)
@@ -188,6 +197,29 @@ const claimShareES = async () => {
 	//console.log(arraySharesES)
 }
 
+const claimShareV2 = async () => {
+    console.log('claiming shares')
+    const data = fs.readFileSync('./data/vether2Shares.json', 'utf8')
+    let arraySharesV2  = JSON.parse(data)
+	for (var i = 0; i < arraySharesV2.length; i++) {
+		let shareObj = arraySharesV2[i].share
+		let era = shareObj.era; let day = +shareObj.day; let share = shareObj.share; let withdrawn = shareObj.withdrawn;
+		console.log('withdrawn', shareObj.withdrawn)
+		if (withdrawn == false && day <49) {
+			
+			console.log('withdraw: ', era, day, share, withdrawn)
+			era = shareObj.era; day = shareObj.day; share = shareObj.share; withdrawn = shareObj.withdrawn;
+			console.log('withdraw: ', era, day, share, true)
+			let tx = await contract2.withdrawShareForMember(era, day, arraySharesV2[i].address, {gasPrice:40*10**9});
+			console.log(tx.hash);
+			await tx.wait();
+			arraySharesV2[i].share = { 'era': era, 'day': day, 'share': share, 'withdrawn': true, 'tx': tx.hash}
+			await fs.writeFileSync('./data/arraySharesV2.json', JSON.stringify(arraySharesV2), 'utf8')
+		}
+	}
+	//console.log(arraySharesES)
+}
+
 const claimShare1 = async (arrayAddress) => {
     console.log('claiming shares 1')
 	let day = 44
@@ -220,17 +252,17 @@ const claimShareBalance = async () => {
 	// console.log(owners)
     // const balances  = JSON.parse(data)
     // const owners = balances.owners
-	let day = 44
+	let day = 47
 	for(var i = 0; i < owners.length; i++){
 
 		// console.log('withdrawn', arrayAddress[i].withdrawn)
 		// if (arrayAddress[i].withdrawn == false) {
 			console.log(1, day, owners[i])
-			let value = await contract.getEmissionShare(1, day, owners[i]);
+			let value = await contract2.getEmissionShare(1, day, owners[i]);
 			console.log('value', +value)
 			if(+value>0){
 				console.log("withdrawing")
-				let tx = await contract.withdrawShareForMember(1, day, owners[i]);
+				let tx = await contract2.withdrawShareForMember(1, day, owners[i], {gasPrice:60*10**9});
 				console.log(tx.hash);
 				await tx.wait();
 				// let share = {'address': owners[i].address, 'withdrawn': true, 'tx': tx.hash}
@@ -259,8 +291,9 @@ const main = async () => {
 	await updateDetails()
 	// await scanEtherscan()
 	// await etherscanTotal()
-	await claimShareES()
-    // await claimShareBalance()
+	// await claimShareES()
+	// await claimShareV2()
+    await claimShareBalance()
 	// await claimShare1(arrayAddress)
 
     // await fs.writeFileSync('./data/balanceArrayShares.json', JSON.stringify(arrayShares), 'utf8')

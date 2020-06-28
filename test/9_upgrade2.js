@@ -40,31 +40,40 @@ contract("Upgrade Vether", async accounts => {
 	deploy3(accounts)
 	sendEtherFail('v2') // Fail in 2
 	sendEtherFail('v3') // Fail in 3
-	sendEther('v1') // 1-1
-	sendEther('v1') // 1-2
-	withdraws('v1', 1, 1)
-	withdraws('v1', 1,2)
+	sendEther('v1', acc0) // 1-1
+	sendEther('v1', acc0) // 1-2
+	withdraws('v1', acc0, 1, 1)
+	withdraws('v1', acc0, 1,2)
 	transfer('v1', acc1)	// send some to acc1
 	excludeVether('v1') //burnAddress in Vether1
 	snapshot('v1') //snapshot Vether1 in 2
 	upgradeTo2(acc0) // upgrade acc0 to Vether2
-	sendEther('v2') // 1-3 mine Vether2
-	sendEther('v2') // 1-4 mine Vether2
-	withdraws('v2', 1,3) // withdraw Vether2
+	sendEther('v2', acc0) // 1-3 mine Vether2
+	sendEther('v2', acc0) // 1-4 mine Vether2
+	withdraws('v2', acc0, 1,3) // withdraw Vether2
 	deploy3(accounts)
-	withdraws('v2', 1,4) // withdraw Vether2
+	withdraws('v2', acc0, 1,4) // withdraw Vether2
 	transfer('v2', acc2) // send some to acc2
 	excludeVether('v2') //burnAddress in Vether2
 	snapshot('v2') //snapshot Vether2 in 3
 	upgradeTo3from1(acc1)
 	upgradeTo3from2(acc0)
 	upgradeTo3from2(acc2)
-	sendEther('v3') // 1-5 mine Vether3
-	sendEther('v3') // 1-6 mine Vether3
-	withdraws('v3', 1,5) // withdraw Vether3
-	withdraws('v3', 1,6) // withdraw Vether3
+	sendEther('v3', acc0) // 1-5 mine Vether3
+	sendEther('v3', acc0) // 1-6 mine Vether3
+	withdraws('v3', acc0, 1,5) // withdraw Vether3
+	withdraws('v3', acc0, 1,6) // withdraw Vether3
 	transfer3(acc3) // send some to acc2
 	excludeVether('v3')
+	sendEther('v1', acc0) // 1-2
+	withdraws('v1', acc0, 1, 4)
+	sendEther('v2', acc0) // 1-4 mine Vether2
+	withdraws('v2', acc0, 1,6) // withdraw Vether2
+	failUpgradeTo3from1(acc0) // can't claim too much
+	failUpgradeTo3from2(acc0) // can't claim too much
+	sendEther('v2', acc2) // 1-4 mine Vether2
+	withdraws('v2', acc2, 1,7) // withdraw Vether2
+	failUpgradeTo3from2(acc2) // can't claim too much
 	purge()
 })
 
@@ -82,18 +91,6 @@ function constructor(accounts) {
 		const genesisOld = BN2Str(await vether1.genesis())
 		const genesis = BN2Str(await vether2.genesis())
 		assert.equal(genesis, genesisOld)
-		// const ndt2 = getBN(await vether2.nextDayTime())
-		// const sPD = getBN(await vether2.secondsPerDay())
-		// const currentDay2 = getBN(await vether2.currentDay())
-		// const nndt2 = ndt2.plus((getBN(upgradeHeight2).minus(currentDay2)).times(getBN(sPD)))
-		// const ndt3 = getBN(await vether3.nextDayTime())
-		// assert.equal(BN2Str(nndt2), BN2Str(ndt3))
-		// console.log("seconds diff", BN2Str(nndt2.minus(ndt3)))
-		// console.log("ndt2", BN2Str(ndt2))
-		// console.log("currentDay2", BN2Str(currentDay2))
-		// console.log("upgradeHeight2", BN2Str(upgradeHeight2))
-		// console.log("nndt2", BN2Str(nndt2))
-		// console.log("ndt3", BN2Str(ndt3))
 
 		const currentDay = await vether2.currentDay()
 		assert.equal(currentDay, upgradeHeight1)
@@ -169,9 +166,9 @@ function deploy3(accounts) {
 	})
 }
 
-function sendEther(_vether) {
+function sendEther(_vether, _acc) {
 
-	it("Acc0 sends Ether to old Vether", async () => {
+	it(`Acc0 sends Ether to ${_vether} Vether`, async () => {
 		await delay(2100);
 
 		let vether
@@ -179,7 +176,6 @@ function sendEther(_vether) {
 		else if (_vether == 'v2') { vether = vether2; }
 		else { vether = vether3; }
 
-		let _acc = acc0;
 		var _era; var _day;
 
 		_era = await vether.currentEra(); _day = await vether.currentDay();
@@ -214,16 +210,15 @@ function sendEther(_vether) {
 	})
 }
 
-function withdraws(_vether, _era, _day) {
+function withdraws(_vether, _acc, _era, _day) {
 
-	it("Acc0 withdraws from old Vether", async () => {
+	it(`Acc0 withdraws from ${_vether} Vether`, async () => {
 
 		let vether
 		if (_vether == 'v1') { vether = vether1; }
 		else if (_vether == 'v2') { vether = vether2; }
 		else { vether = vether3; }
 
-		let _acc = acc0;
 		let _bal = Emission
 
 		let valueStart = getBN(await vether.getEmissionShare(_era, _day, _acc));
@@ -449,7 +444,7 @@ function upgradeTo3from1(_acc) {
 }
 function upgradeTo3from2(_acc) {
 
-	it("allows a Vether1 upgrade to Vether3 starts", async () => {
+	it("allows a Vether2 upgrade to Vether3", async () => {
 		let balanceLeft = await vether2.balanceOf(_acc)
 		let remaining = getBN(await vether3.getRemainingAmount())
 		let upgradedAmount = getBN(await vether3.upgradedAmount())
@@ -510,20 +505,72 @@ function transfer3(_acc) {
 	})
 }
 
-function upgradeFinal(_acc) {
+function failUpgradeTo3from1(_acc) {
 
-	it("passes an upgrade for the remaining", async () => {
-		console.log('ownership acc', BN2Str(await vether3.mapPreviousOwnership(_acc)))
-		let claimLeft = await vether3.getRemainingAmount()
-		let balanceLeft = await vether.balanceOf(_acc)
-		await vether.approve(vether3.address, balanceLeft, { from: _acc })
-		await vether3.upgrade(balanceLeft)
-		let balanceAfter = getBN(await vether.balanceOf(_acc))
-		console.log('claimLeft', BN2Str(claimLeft))
+	it("fails a Vether1 upgrade to Vether3", async () => {
+		let balanceLeft = await vether1.balanceOf(_acc)
+		let remaining = getBN(await vether3.getRemainingAmount())
+		let upgradedAmount = getBN(await vether3.upgradedAmount())
 		console.log('balanceLeft', BN2Str(balanceLeft))
-		assert.equal(BN2Str(claimLeft), BN2Str((getBN(balanceLeft)).minus(balanceAfter)))
+		console.log('ownership acc', BN2Str(await vether3.mapPreviousOwnership(_acc)))
+		await vether1.approve(vether3.address, balanceLeft, { from: _acc })
+		console.log('allowance', BN2Str(await vether1.allowance(_acc, vether3.address)))
+
+		let balanceBurn1 = getBN(await vether1.balanceOf(burnAddress))
+		await vether3.upgradeV1({ from: _acc })
+		let balanceBurn2 = getBN(await vether1.balanceOf(burnAddress))
+		
+		assert.equal(BN2Str(balanceBurn2.minus(balanceBurn1)), BN2Str(0))
+		let remainingEnd = getBN(await vether3.getRemainingAmount())
+		assert.equal(BN2Str(remaining.minus(remainingEnd)), BN2Str(0))
+		//console.log(BN2Str(remainingEnd))
+
+		let newUpgradedAmount = BN2Str(await vether3.upgradedAmount())
+		assert.equal(newUpgradedAmount, BN2Str(upgradedAmount.plus(0)))
+
+		const remainingNew = getBN(await vether3.getRemainingAmount())
+		assert.equal(BN2Str(remaining.minus(remainingNew)), BN2Str(0))
+		console.log('remainingNew', BN2Str(remainingNew))
+		console.log('balance', BN2Str(await vether3.balanceOf(_acc)))
 		console.log('holders', BN2Str(await vether3.holders()))
-		console.log('holder0', await vether3.holderArray(1))
+		console.log('holder0', await vether3.holderArray(0))
+		console.log('holder1', await vether3.holderArray(1))
+		console.log('holder2', await vether3.holderArray(2))
+		console.log('holder3', await vether3.holderArray(3))
+		console.log('holder4', await vether3.holderArray(4))
+
+	})
+}
+function failUpgradeTo3from2(_acc) {
+
+	it("fails a Vether2 upgrade to Vether3", async () => {
+		let balanceLeft = await vether2.balanceOf(_acc)
+		let remaining = getBN(await vether3.getRemainingAmount())
+		let upgradedAmount = getBN(await vether3.upgradedAmount())
+		console.log('balanceLeft', BN2Str(balanceLeft))
+		console.log('ownership acc', BN2Str(await vether3.mapPreviousOwnership(_acc)))
+		await vether2.approve(vether3.address, balanceLeft, { from: _acc })
+		console.log('allowance', BN2Str(await vether2.allowance(_acc, vether3.address)))
+
+		let balanceBurn1 = getBN(await vether2.balanceOf(burnAddress))
+		await vether3.upgradeV2({ from: _acc })
+		let balanceBurn2 = getBN(await vether2.balanceOf(burnAddress))
+		
+		assert.equal(BN2Str(balanceBurn2.minus(balanceBurn1)), BN2Str(0))
+		let remainingEnd = getBN(await vether3.getRemainingAmount())
+		assert.equal(BN2Str(remaining.minus(remainingEnd)), BN2Str(0))
+		//console.log(BN2Str(remainingEnd))
+
+		let newUpgradedAmount = BN2Str(await vether3.upgradedAmount())
+		assert.equal(newUpgradedAmount, BN2Str(upgradedAmount.plus(0)))
+
+		const remainingNew = getBN(await vether3.getRemainingAmount())
+		assert.equal(BN2Str(remaining.minus(remainingNew)), BN2Str(0))
+		console.log('remainingNew', BN2Str(remainingNew))
+		console.log('balance', BN2Str(await vether3.balanceOf(_acc)))
+		console.log('holders', BN2Str(await vether3.holders()))
+		console.log('holder0', await vether3.holderArray(0))
+
 	})
 }
 
