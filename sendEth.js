@@ -16,7 +16,7 @@ const sendEth = async (amt) => {
 		gasLimit: 250000,
         value: 1,
         to:minerAddress,
-        nonce: 157,
+        nonce: 220,
     };
     console.log(tx)
     let transactionHash = await wallet.sendTransaction(tx)

@@ -45,6 +45,7 @@ const updateDetails = async () => {
 	nextDayTime = (new BigNumber(await contract.nextDayTime())).toFixed()
 	console.log('era:%s - day:%s - NextDay:%s', currentEra, currentDay, nextDayTime)
 
+	//Holder Map
 	// const apiKey = process.env.ETHPLORER_API
     // const baseURL = 'https://api.ethplorer.io/getAddressTransactions/0x8a9c1cd4074751e94f2c4075d333fb3226ca9378?apiKey='
     // console.log(baseURL + apiKey + '&limit=50')
@@ -57,8 +58,49 @@ const updateDetails = async () => {
 	// 	arrayAddress.push(share)
 	// }
 	// console.log(arrayAddress)
-	
+
+	// Etherscan map
+	// const baseURLES = 'http://api.etherscan.io/api?module=account&action=txlist&address=0x31Bb711de2e457066c6281f231fb473FC5c2afd3&startblock=0&endblock=99999999&sort=asc'
+	// const resp = await axios.get(baseURLES)
+	// // console.log(resp.data)
+	// addresses = resp.data.map(item => item.from)
+	// console.log(addresses)
     // await fs.writeFileSync(`./data/arrayAddress-start.json`, JSON.stringify(arrayAddress), 'utf8')
+}
+
+const getEtherscan = async() => {
+    const data = fs.readFileSync('./data/etherscan.json', 'utf8')
+	const etherscan = JSON.parse(data)
+	const allAddresses = etherscan.result.map(item => item.from)
+	addresses = [...new Set(allAddresses)]
+	await fs.writeFileSync(`./data/etherscanAddresses.json`, JSON.stringify(addresses), 'utf8')
+}
+
+const scanEtherscan = async() =>{
+	const data = fs.readFileSync('./data/etherscanAddresses.json', 'utf8')
+	const arrayAddress = JSON.parse(data)
+	for(var i = 0; i<arrayAddress.length; i++){
+		await checkShare(arrayAddress[i])
+		await fs.writeFileSync(`./data/etherscanShares.json`, JSON.stringify(arrayShares), 'utf8')
+	}
+}
+
+const etherscanFilter = async() => {
+	const data = fs.readFileSync('./data/etherscanShares.json', 'utf8')
+	const arrayShares = JSON.parse(data)
+	let arrayShare44 = arrayShares.filter(item => +item.share.day <= 44)
+	// console.log(arrayShareFilter)
+	await fs.writeFileSync(`./data/etherscanShares44.json`, JSON.stringify(arrayShare44), 'utf8')
+	// let total = arrayShares.reduce((total, item) => +item.share.share + total)
+	// console.log('total %s VETH from %s users', total, arrayShares.length)
+}
+
+const etherscanTotal= async() => {
+	const data = fs.readFileSync('./data/etherscanShares44.json', 'utf8')
+	const arrayShares44 = JSON.parse(data)
+	let total = arrayShares44.reduce((total, item) => (new BigNumber(item.share.share)).plus(total), 0)
+	// console.log(total)
+	console.log('total %s VETH from %s users', total.toFixed(), arrayShares44.length)
 }
 
 const checkShare = async (address) => {
@@ -96,7 +138,7 @@ async function checkDay(i, j, length, address) {
 			console.log(i, day, share)
             arrayShares.push({'address':address, 
             share:
-                { 'era': i, 'day': day, 'share': share, 'withdrawn': false }})
+                { 'era': i, 'day': day, 'share': share, 'withdrawn': false, 'tx': null }})
 		}
 	}
 }
@@ -122,6 +164,28 @@ const claimShare = async () => {
 			}
 		}
     }
+}
+
+const claimShareES = async () => {
+    console.log('claiming shares')
+    const data = fs.readFileSync('./data/etherscanShares44.json', 'utf8')
+    let arraySharesES  = JSON.parse(data)
+	for (var i = 0; i < arraySharesES.length; i++) {
+        let shareObj = arraySharesES[i].share
+		console.log('withdrawn', shareObj.withdrawn)
+		if (shareObj.withdrawn == false) {
+			let era = shareObj.era; let day = +shareObj.day; let share = shareObj.share; let withdrawn = shareObj.withdrawn;
+			console.log('withdraw: ', era, day, share, withdrawn)
+			era = shareObj.era; day = shareObj.day; share = shareObj.share; withdrawn = shareObj.withdrawn;
+			console.log('withdraw: ', era, day, share, true)
+			let tx = await contract.withdrawShareForMember(era, day, arraySharesES[i].address, {gasPrice:40*10**9});
+			console.log(tx.hash);
+			await tx.wait();
+			arraySharesES[i].share = { 'era': era, 'day': day, 'share': share, 'withdrawn': true, 'tx': tx.hash}
+			await fs.writeFileSync('./data/arraySharesES.json', JSON.stringify(arraySharesES), 'utf8')
+		}
+	}
+	//console.log(arraySharesES)
 }
 
 const claimShare1 = async (arrayAddress) => {
@@ -192,8 +256,11 @@ const main = async () => {
 
 	// const startTime = new Date(Date.now()).toLocaleString("en-gb")
 	// times = { 'start': startTime, 'cycle': times.cycle, 'query': times.query  }
-    await updateDetails()
-    await claimShareBalance()
+	await updateDetails()
+	// await scanEtherscan()
+	// await etherscanTotal()
+	await claimShareES()
+    // await claimShareBalance()
 	// await claimShare1(arrayAddress)
 
     // await fs.writeFileSync('./data/balanceArrayShares.json', JSON.stringify(arrayShares), 'utf8')
