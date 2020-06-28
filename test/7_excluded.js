@@ -33,8 +33,10 @@ function constructor(accounts) {
   it("constructor events", async () => {
     let VetherOld = artifacts.require("./VetherOld.sol");
     vetherOld = await VetherOld.new()
-    let Vether = artifacts.require("Vether.sol");
-    coin = await Vether.new(vetherOld.address)
+    let Vether2 = artifacts.require("./Vether2.sol");
+    vether2 = await Vether2.new(vetherOld.address)
+    let Vether = artifacts.require("./Vether3.sol");
+    coin = await Vether.new(vetherOld.address, vether2.address)
     coinAddress = coin.address;
     let Registry1 = artifacts.require("Registry1.sol");
     registry1 = await Registry1.new()

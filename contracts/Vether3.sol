@@ -167,6 +167,8 @@ contract Vether3 is ERC20 {
             return (_value / 1000);                                                         // Fee amount = 0.1%
         }
     }
+
+    //=======================================UPGRADE========================================//
     // Allow to query for remaining upgrade amount
     function getRemainingAmount() public view returns (uint amount){
         uint maxEmissions = (upgradeHeight-1) * mapEra_Emission[1];                         // Max Emission on Old Contract
@@ -207,13 +209,14 @@ contract Vether3 is ERC20 {
             _transfer(address(this), msg.sender, amount);                                   // Send to owner
         }
     }
+    // Snapshot previous owners
     function snapshot(address[] memory owners, uint[] memory ownership) public{
         require(msg.sender == deployer);
         for(uint i = 0; i<owners.length; i++){
             mapPreviousOwnership[owners[i]] += ownership[i];
         }
     }
-    
+    // purge
     function purgeDeployer() public{require(msg.sender == deployer);deployer = address(0);}
 
     //==================================PROOF-OF-VALUE======================================//

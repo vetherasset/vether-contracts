@@ -39,8 +39,10 @@ function constructor(accounts) {
   it("constructor events", async () => {
     let VetherOld = artifacts.require("./VetherOld.sol");
     vetherOld = await VetherOld.new()
-    let Vether = artifacts.require("Vether.sol");
-    coin = await Vether.new(vetherOld.address)
+    let Vether2 = artifacts.require("./Vether2.sol");
+    vether2 = await Vether2.new(vetherOld.address)
+    let Vether = artifacts.require("./Vether3.sol");
+    coin = await Vether.new(vetherOld.address, vether2.address)
     coinAddress = coin.address;
     console.log("coin:", coinAddress) 
   });
@@ -73,7 +75,7 @@ function sendEther() {
         //console.log(BN2Str(valueShare))
         assert.equal(BN2Str(valueShare), _emission, "the value share is correct");
 
-        let valueLeft = await coin.mapEraDay_Emission.call(_era, _day);
+        let valueLeft = await coin.mapEraDay_EmissionRemaining.call(_era, _day);
         assert.equal(valueLeft, _emission, "the value left is correct");
 
         let coinBal1 = new BigNumber(await coin.balanceOf(coinAddress)).toFixed();

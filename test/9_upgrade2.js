@@ -64,6 +64,7 @@ contract("Upgrade Vether", async accounts => {
 	withdraws('v3', 1,5) // withdraw Vether3
 	withdraws('v3', 1,6) // withdraw Vether3
 	transfer3(acc3) // send some to acc2
+	excludeVether('v3')
 	purge()
 })
 
@@ -309,10 +310,14 @@ function excludeVether(_vether) {
 			await vether.changeExcluded(burnAddress, { from: acc0 })
 			assert.equal(await vether.mapAddress_Excluded(burnAddress), true)
 		}
-		else { vether = vether3; }
-
-		
-
+		else { vether = vether3; 
+			await vether.changeExcluded(acc0, { from: acc0 })
+			assert.equal(await vether.mapAddress_Excluded(acc0), true)
+			console.log(BN2Str(await vether3.excludedCount()))
+			console.log((await vether3.excludedArray(0)))
+			console.log((await vether3.excludedArray(1)))
+			console.log((await vether3.excludedArray(2)))
+		}
 	})
 }
 

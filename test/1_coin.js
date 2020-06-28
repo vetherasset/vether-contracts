@@ -31,10 +31,12 @@ function constructor(accounts){
   acc0 = accounts[0]; acc1 = accounts[1]; acc2 = accounts[2];
 
   it("constructor events", async () => {
-    let VetherOld = artifacts.require("./VetherOld.sol");
+    let VetherOld = artifacts.require("./Vether1.sol");
     vetherOld = await VetherOld.new()
-    let Vether = artifacts.require("./Vether.sol");
-    coin = await Vether.new(vetherOld.address)
+    let Vether2 = artifacts.require("./Vether2.sol");
+    vether2 = await Vether2.new(vetherOld.address)
+    let Vether = artifacts.require("./Vether3.sol");
+    coin = await Vether.new(vetherOld.address, vether2.address)
     coinAddress = coin.address;
     console.log("coin:", coinAddress)
 
@@ -125,7 +127,7 @@ function checkParams(){
 
       let bal = await coin.balanceOf(coinAddress);
       assert.equal(bal, Supply, "bal");
-      let rewardLeft = await coin.mapEraDay_Emission.call(Era, Day);
+      let rewardLeft = await coin.mapEraDay_EmissionRemaining.call(Era, Day);
       assert.equal(rewardLeft, Emission, "correct rewardleft for Era 1, Day 1");
     
  })
