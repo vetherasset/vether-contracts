@@ -50,7 +50,7 @@ contract Vether4 is ERC20 {
     mapping(address => uint) private _balances;
     mapping(address => mapping(address => uint)) private _allowances;
     // Public Parameters
-    uint coin = 1; uint public emission;
+    uint public coin; uint public emission;
     uint public currentEra; uint public currentDay;
     uint public daysPerEra; uint public secondsPerDay;
     uint public upgradeHeight; uint public upgradedAmount;
@@ -84,14 +84,14 @@ contract Vether4 is ERC20 {
         vether1 = _vether1;                                // First Vether
         vether2 = _vether2;                                // Second Vether
         upgradeHeight = 5;                                                                  // Height at which to upgrade
-        name = VETH(vether2).name(); symbol = VETH(vether2).symbol();
-        decimals = VETH(vether2).decimals(); totalSupply = VETH(vether2).totalSupply();
-        genesis = VETH(vether2).genesis(); emission = VETH(vether2).emission(); 
-        currentEra = VETH(vether2).currentEra(); currentDay = upgradeHeight;                // Begin at Upgrade Height
-        daysPerEra = VETH(vether2).daysPerEra(); secondsPerDay = VETH(vether2).secondsPerDay();
+        name = "Vether"; symbol = "VETH"; decimals = 18; 
+        coin = 1; totalSupply = 8190*coin;
+        genesis = VETH(vether1).genesis(); emission = 2048**coin; 
+        currentEra = 1; currentDay = upgradeHeight;                                         // Begin at Upgrade Height
+        daysPerEra = 244; secondsPerDay = 2;
         totalBurnt = VETH(vether2).totalBurnt(); totalFees = VETH(vether2).totalFees();
         totalEmitted = (upgradeHeight-1)*emission;
-        burnAddress = VETH(vether2).burnAddress(); deployer = msg.sender;
+        burnAddress = 0x0111011001100001011011000111010101100101; deployer = msg.sender;
         _balances[address(this)] = totalSupply; 
         emit Transfer(burnAddress, address(this), totalSupply);
         nextEraTime = genesis + (secondsPerDay * daysPerEra);
@@ -165,33 +165,38 @@ contract Vether4 is ERC20 {
 
     //=======================================UPGRADE========================================//
     // Allow to query for remaining upgrade amount
-    function getRemainingAmount() public view returns (uint amount){
-        uint maxEmissions = (upgradeHeight-1) * mapEra_Emission[1];                         // Max Emission on Old Contract
-        uint maxUpgradeAmount = (maxEmissions).sub(VETH(vether2).totalFees());              // Minus any collected fees
-        if(maxUpgradeAmount >= upgradedAmount){
-            return maxUpgradeAmount.sub(upgradedAmount);                                    // Return remaining
-        } else {
-            return 0;                                                                       // Return 0
-        }
-    }
-    // Claim Vether based on snapshot
-    function claim() public {
-        uint amount = mapPreviousOwnership[msg.sender];
-        if(amount > 0){
-            uint remainingAmount = getRemainingAmount();
-            if(remainingAmount < amount){amount = remainingAmount;}                         // Handle final amount
-            upgradedAmount += amount; 
-            mapPreviousOwnership[msg.sender] = 0;                                           // Update mappings
-            _transfer(address(this), msg.sender, amount);                                   // Send to owner
-        }
-    }
-    // Snapshot previous owners
-    function snapshot(address[] memory owners, uint[] memory ownership) public{
+    // function getRemainingAmount() public view returns (uint amount){
+    //     uint maxEmissions = (upgradeHeight-1) * mapEra_Emission[1];                         // Max Emission on Old Contract
+    //     uint maxUpgradeAmount = (maxEmissions).sub(VETH(vether2).totalFees());              // Minus any collected fees
+    //     if(maxUpgradeAmount >= upgradedAmount){
+    //         return maxUpgradeAmount.sub(upgradedAmount);                                    // Return remaining
+    //     } else {
+    //         return 0;                                                                       // Return 0
+    //     }
+    // }
+    // // Claim Vether based on snapshot
+    // function claim() public {
+    //     uint amount = mapPreviousOwnership[msg.sender];
+    //     if(amount > 0){
+    //         uint remainingAmount = getRemainingAmount();
+    //         if(remainingAmount < amount){amount = remainingAmount;}                         // Handle final amount
+    //         upgradedAmount += amount; 
+    //         mapPreviousOwnership[msg.sender] = 0;                                           // Update mappings
+    //         _transfer(address(this), msg.sender, amount);                                   // Send to owner
+    //     }
+    // }
+
+    // Distribute to previous owners
+    function distribute(address[] memory owners, uint[] memory ownership) public{
         require(msg.sender == deployer);
+        uint maxEmissions = (upgradeHeight-1) * mapEra_Emission[1]; 
         for(uint i = 0; i<owners.length; i++){
-            mapPreviousOwnership[owners[i]] += ownership[i];
+            upgradedAmount += ownership[i];                                                 // Track
+            require(upgradedAmount <= maxEmissions, "Must not send more than possible"); // Safety Check
+            _transfer(address(this), owners[i], ownership[i]);                              // Send to owner
         }
     }
+    
     // purge
     function purgeDeployer() public{require(msg.sender == deployer);deployer = address(0);}
 

@@ -46,7 +46,7 @@ function constructor(accounts) {
         vetherOld = await VetherOld.new()
         let Vether2 = artifacts.require("./Vether2.sol");
         vether2 = await Vether2.new(vetherOld.address)
-        let Vether = artifacts.require("./Vether3.sol");
+        let Vether = artifacts.require("./Vether4.sol");
         coin = await Vether.new(vetherOld.address, vether2.address)
         coinAddress = coin.address;
         //console.log("coin:", coinAddress) 

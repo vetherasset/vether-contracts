@@ -105,7 +105,6 @@ function deploy3(accounts) {
 		const ndt3 = getBN(await vether4.nextDayTime())
 		console.log(BN2Str(ndt3))
 
-
 		const currentDay = await vether4.currentDay()
 		assert.equal(currentDay, upgradeHeight2)
 

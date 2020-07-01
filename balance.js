@@ -268,14 +268,56 @@ const checkTotals = () =>{
     console.log('Total V1&V2', totalStr)
     console.log('TotalV1', totalV1)
     console.log('TotalV2', totalV2)
-    console.log('Max Emitted Vether', 2048*50)
-    console.log('Vether lost to fees/contracts', 2048*50 - +totalStr)
+    console.log('Max Emitted Vether', 2048*49)
+    console.log('Vether lost to fees/contracts', BN2Str18(getBN(2048*49 - +totalStr)))
+}
+
+const reExport = async () =>{
+    let balanceArray = [];
+    let ownerString = ""
+    let balanceString = ""
+
+    const data = fs.readFileSync('./data/balancesV12.json', 'utf8')
+    const balances = JSON.parse(data)
+    for (let i = 0; i < balances.length; i++) {
+        ownerString = ownerString + "," + balances[i].owner
+        var ownership = getBN(balances[i].ownership).toFixed()
+        // console.log(BN2Str(ownership))
+        balanceString = `${balanceString},${(ownership)}`
+        if ((i % 100 == 0 && i != 0) || (i == balances.length - 1)) {
+            var balancesStr = { 'owners': ownerString, 'ownership': balanceString };
+            await fs.writeFileSync(`./data/balancesV124-${i}.md`, JSON.stringify(balancesStr), 'utf8')
+            ownerString = ""
+            balanceString = ""
+        }
+    }
+}
+
+const audit = async () =>{
+    let balanceArray = [];
+    const data1 = JSON.parse(fs.readFileSync('./data/balancesV124-100.md', 'utf8'))
+    let ownership1 = data1.ownership.split(/,/);
+    let total1 = ownership1.reduce((total, item) => +item + total, 0)
+    console.log(total1)
+    const data2 = JSON.parse(fs.readFileSync('./data/balancesV124-200.md', 'utf8'))
+    let ownership2 = data2.ownership.split(/,/);
+    let total2 = ownership2.reduce((total, item) => +item + total, 0)
+    console.log(total2)
+    const data3 = JSON.parse(fs.readFileSync('./data/balancesV124-281.md', 'utf8'))
+    let ownership3 = data3.ownership.split(/,/);
+    let total3 = ownership3.reduce((total, item) => +item + total, 0)
+    console.log(total3)
+
+    console.log(total1 + total2 + total3)
+
 }
 
 const main = async () => {
     // await getAddresses()
     // await getAddressesBoth()
     checkTotals()
+    // reExport()
+    audit()
 }
 
 

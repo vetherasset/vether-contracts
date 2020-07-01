@@ -54,9 +54,9 @@ contract Vether1 is ERC20 {
     constructor() public {
         //local
         name = "Vether"; symbol = "VETH"; decimals = 18; 
-        coin = 1; totalSupply = 64000*coin;
+        coin = 1; totalSupply = 8190*coin;
         emission = 2048*coin; currentEra = 1; currentDay = 1;                               // Set emission, era and day
-        genesis = now; daysPerEra = 20; secondsPerDay = 2;                                   // Set genesis time
+        genesis = now; daysPerEra = 2; secondsPerDay = 1;                                   // Set genesis time
         burnAddress = 0x0111011001100001011011000111010101100101;                           // TEST 
 
         //testnet
