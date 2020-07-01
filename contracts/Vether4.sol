@@ -56,7 +56,7 @@ contract Vether4 is ERC20 {
     uint public upgradeHeight; uint public upgradedAmount;
     uint public genesis; uint public nextEraTime; uint public nextDayTime;
     address payable public burnAddress; address deployer;
-    address public vether1; address public vether2; address public vether3;
+    address public vether1; address public vether2;
     uint public totalFees; uint public totalBurnt; uint public totalEmitted;
     address[] public holderArray; uint public holders;
     address[] public excludedArray; uint public excludedCount;
@@ -80,25 +80,24 @@ contract Vether4 is ERC20 {
 
     //=====================================CREATION=========================================//
     // Constructor
-    constructor(address _vether1, address _vether2, address _vether3) public {
+    constructor(address _vether1, address _vether2) public {
         vether1 = _vether1;                                // First Vether
         vether2 = _vether2;                                // Second Vether
-        vether3 = _vether3;                                 // Third Vether
-        upgradeHeight = 7;                                                                  // Height at which to upgrade
-        name = VETH(vether3).name(); symbol = VETH(vether3).symbol();
-        decimals = VETH(vether3).decimals(); totalSupply = VETH(vether3).totalSupply();
-        genesis = VETH(vether3).genesis(); emission = VETH(vether3).emission(); 
-        currentEra = VETH(vether3).currentEra(); currentDay = upgradeHeight;                // Begin at Upgrade Height
-        daysPerEra = VETH(vether3).daysPerEra(); secondsPerDay = VETH(vether3).secondsPerDay();
-        totalBurnt = VETH(vether3).totalBurnt(); totalFees = VETH(vether3).totalFees();
+        upgradeHeight = 5;                                                                  // Height at which to upgrade
+        name = VETH(vether2).name(); symbol = VETH(vether2).symbol();
+        decimals = VETH(vether2).decimals(); totalSupply = VETH(vether2).totalSupply();
+        genesis = VETH(vether2).genesis(); emission = VETH(vether2).emission(); 
+        currentEra = VETH(vether2).currentEra(); currentDay = upgradeHeight;                // Begin at Upgrade Height
+        daysPerEra = VETH(vether2).daysPerEra(); secondsPerDay = VETH(vether2).secondsPerDay();
+        totalBurnt = VETH(vether2).totalBurnt(); totalFees = VETH(vether2).totalFees();
         totalEmitted = (upgradeHeight-1)*emission;
-        burnAddress = VETH(vether3).burnAddress(); deployer = msg.sender;
+        burnAddress = VETH(vether2).burnAddress(); deployer = msg.sender;
         _balances[address(this)] = totalSupply; 
         emit Transfer(burnAddress, address(this), totalSupply);
         nextEraTime = genesis + (secondsPerDay * daysPerEra);
-        nextDayTime = VETH(vether3).nextDayTime() + (secondsPerDay * (upgradeHeight - VETH(vether3).currentDay())); 
+        nextDayTime = now + secondsPerDay;
         mapAddress_Excluded[address(this)] = true;                                          
-        excludedArray.push(address(this)); excludedCount =1;                               
+        excludedArray.push(address(this)); excludedCount = 1;                               
         mapAddress_Excluded[burnAddress] = true;
         excludedArray.push(burnAddress); excludedCount +=1; 
         mapEra_Emission[currentEra] = emission; 
@@ -106,8 +105,12 @@ contract Vether4 is ERC20 {
         _setMappings();                                                                  // Map historical units
     }
     function _setMappings() internal {
-        for(uint i=0;i<upgradeHeight; i++) {
-            mapEraDay_Units[1][i] = VETH(vether3).mapEraDay_Units(1,i); 
+        uint upgradeHeight1 = VETH(vether2).upgradeHeight();                
+        for(uint i=0;i<upgradeHeight1; i++) {
+            mapEraDay_Units[1][i] = VETH(vether1).mapEraDay_Units(1,i); 
+        }
+        for(uint i=upgradeHeight1;i<upgradeHeight; i++) {
+            mapEraDay_Units[1][i] = VETH(vether2).mapEraDay_Units(1,i); 
         }
     }
 
@@ -132,7 +135,7 @@ contract Vether4 is ERC20 {
     // ERC20 TransferFrom function
     function transferFrom(address from, address to, uint value) public override returns (bool success) {
         require(value <= _allowances[from][msg.sender], 'Must not send more than allowance');
-            _allowances[from][msg.sender] -= value;
+        _allowances[from][msg.sender] = _allowances[from][msg.sender].sub(value);
         _transfer(from, to, value);
         return true;
     }
@@ -164,26 +167,21 @@ contract Vether4 is ERC20 {
     // Allow to query for remaining upgrade amount
     function getRemainingAmount() public view returns (uint amount){
         uint maxEmissions = (upgradeHeight-1) * mapEra_Emission[1];                         // Max Emission on Old Contract
-        uint maxUpgradeAmount = (maxEmissions).sub(VETH(vether3).totalFees());              // Minus any collected fees
+        uint maxUpgradeAmount = (maxEmissions).sub(VETH(vether2).totalFees());              // Minus any collected fees
         if(maxUpgradeAmount >= upgradedAmount){
             return maxUpgradeAmount.sub(upgradedAmount);                                    // Return remaining
         } else {
             return 0;                                                                       // Return 0
         }
     }
-    // V1 upgrades 
-    function upgrade(address vether) public {
-        require((vether == vether1 || vether == vether3 || vether == vether2), "Must be Vether");
-        uint amount = ERC20(vether).balanceOf(msg.sender);                                 // Get Balance Vether1
+    // Claim Vether based on snapshot
+    function claim() public {
+        uint amount = mapPreviousOwnership[msg.sender];
         if(amount > 0){
-            if(mapPreviousOwnership[msg.sender] < amount){
-                amount = mapPreviousOwnership[msg.sender];                                  // Upgrade as much as possible
-            } 
             uint remainingAmount = getRemainingAmount();
             if(remainingAmount < amount){amount = remainingAmount;}                         // Handle final amount
             upgradedAmount += amount; 
-            mapPreviousOwnership[msg.sender] = mapPreviousOwnership[msg.sender].sub(amount);    // Update mappings
-            ERC20(vether).transferFrom(msg.sender, burnAddress, amount);                   // Must collect & burn tokens
+            mapPreviousOwnership[msg.sender] = 0;                                           // Update mappings
             _transfer(address(this), msg.sender, amount);                                   // Send to owner
         }
     }
@@ -210,7 +208,6 @@ contract Vether4 is ERC20 {
     }
     // Internal - Records burn
     function _recordBurn(address _payer, address _member, uint _era, uint _day, uint _eth) private {
-        require(VETH(vether3).currentDay() >= upgradeHeight || VETH(vether3).currentEra() > 1); // Prohibit until upgrade height
         if (mapEraDay_MemberUnits[_era][_day][_member] == 0){                               // If hasn't contributed to this Day yet
             mapMemberEra_Days[_member][_era].push(_day);                                    // Add it
             mapEraDay_MemberCount[_era][_day] += 1;                                         // Count member
