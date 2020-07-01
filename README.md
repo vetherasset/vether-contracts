@@ -4,20 +4,34 @@
 
 The Vether smart contracts implements the [Vether whitepaper](https://bitcointalk.org/index.php?topic=5243406) announced on 25 April 2020. 
 
-Mainnet: https://etherscan.io/address/0x31Bb711de2e457066c6281f231fb473FC5c2afd3#code
-0x31Bb711de2e457066c6281f231fb473FC5c2afd3
+### Mainet
+Vether1: 0x31Bb711de2e457066c6281f231fb473FC5c2afd3
+Vether2: 0x01217729940055011F17BeFE6270e6E59B7d0337
+Vether3:
 
-Rinkeby: https://rinkeby.etherscan.io/address/0x4257e8a2052aFE4E7a52ee9233139EB28FB4BF44#code
-0x4257e8a2052aFE4E7a52ee9233139EB28FB4BF44
+
+### Rinkeby-Slow: 
+Vether1: 0x4257e8a2052aFE4E7a52ee9233139EB28FB4BF44
+Vether2:
+Vether3:
+
+### Rinkeby-Fast-1
+Vether1: 0x8DC8b4D13D858367ceC17fF144ea2bcf718ff8C6
+Vether2: 0xfEcb4Bf376067B273Ae1f9DA25252Fce3D7D041f
+Vether3: 
+
+### Rinkeby-Fast-2
+Vether1: 0x3aaC4384E118388076C7E4085f39d364781D8604
+Vether2: 0x53753efb66b420fe461263e190fbb45f40ba1f79
+Vether3: 0x68BDD33B0185b3Bf97Da0DEeC0f6d8EF2525193F
+
+### Other
+VetherNew : 0xc3e934cc79d0eE0FE7BE206914A9e5E5f87192B4
+Uniswap V2: 0x0b487517c8c5cae9C7d28D3099907130a6cCB40E
 
 GasMine
-
 https://etherscan.io/address/0x8a9c1cd4074751e94f2c4075d333fb3226ca9378
 
-
-VetherNew : 0xc3e934cc79d0eE0FE7BE206914A9e5E5f87192B4
-
-Uniswap V2: 0x0b487517c8c5cae9C7d28D3099907130a6cCB40E
 
 ### ERC-20
 Vether is an ERC-20 contract that implements the following interface:

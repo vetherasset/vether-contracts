@@ -71,6 +71,7 @@ contract Vether3 is ERC20 {
     mapping(address=>uint) public mapPreviousOwnership;                                     // Map previous owners
     mapping(address=>bool) public mapHolder;                                                // Vether Holder
     mapping(address=>bool) public mapAddress_Excluded;                                      // Address->Excluded
+    mapping(address=>uint) public mapAddress_BlockChange;                                   // Address->BlockHeight Change
     // Events
     event NewEra(uint era, uint emission, uint time, uint totalBurnt);
     event NewDay(uint era, uint day, uint time, uint previousDayTotal, uint previousDayMembers);
@@ -80,9 +81,9 @@ contract Vether3 is ERC20 {
     //=====================================CREATION=========================================//
     // Constructor
     constructor(address _vether1, address _vether2) public {
-        vether1 = _vether1;                                                                 // First Vether
-        vether2 = _vether2;                                                                 // Second Vether
-        upgradeHeight = 5;                                                                 // Height at which to upgrade
+        vether1 = _vether1;                                // First Vether
+        vether2 = _vether2;                                // Second Vether
+        upgradeHeight = 5;                                                                  // Height at which to upgrade
         name = VETH(vether2).name(); symbol = VETH(vether2).symbol();
         decimals = VETH(vether2).decimals(); totalSupply = VETH(vether2).totalSupply();
         genesis = VETH(vether2).genesis(); emission = VETH(vether2).emission(); 
@@ -252,10 +253,12 @@ contract Vether3 is ERC20 {
             mapAddress_Excluded[excluded] = true;                                           // Add desired address
             excludedArray.push(excluded); excludedCount +=1;                                // Record details
             totalFees += mapEra_Emission[1]/16;                                             // Record fees
+            mapAddress_BlockChange[excluded] = block.number;                                // Record time of change
         } else {
             _transfer(msg.sender, address(this), mapEra_Emission[1]/32);                    // Pay fee of 64 Vether
             mapAddress_Excluded[excluded] = false;                                          // Change desired address
-            totalFees += mapEra_Emission[1]/32;
+            totalFees += mapEra_Emission[1]/32;                                             // Record fees
+            mapAddress_BlockChange[excluded] = block.number;                                // Record time of change
         }               
     }
     //======================================WITHDRAWAL======================================//
@@ -333,7 +336,7 @@ contract Vether3 is ERC20 {
             uint _era = currentEra; uint _day = currentDay-1;
             if(currentDay == 1){ _era = currentEra-1; _day = daysPerEra; }                  // Handle New Era
             emit NewDay(currentEra, currentDay, nextDayTime, 
-            mapEraDay_Units[_era][_day], mapEraDay_MemberCount[_era][_day]);                    // Emit Event
+            mapEraDay_Units[_era][_day], mapEraDay_MemberCount[_era][_day]);                // Emit Event
         }
     }
     // Calculate Era emission

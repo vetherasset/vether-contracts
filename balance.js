@@ -102,6 +102,98 @@ const getAddresses = async () => {
 
 
 }
+
+const getAddressesBoth = async () => {
+    provider = ethers.getDefaultProvider();
+    contract1 = new ethers.Contract(addr1(), abi(), provider)
+    contract2 = new ethers.Contract(addr2(), abi(), provider)
+
+    const apiKey = process.env.ETHPLORER_API
+    const baseURL = 'https://api.ethplorer.io/getTopTokenHolders/0x31Bb711de2e457066c6281f231fb473FC5c2afd3?apiKey='
+    console.log(baseURL + apiKey + '&limit=1000')
+    const response = await axios.get(baseURL + apiKey + '&limit=1000')
+    let holderArray = response.data.holders
+    console.log(holderArray.length)
+    var owners1 = holderArray.map((item) => item.address)
+
+    const baseURL2 = 'https://api.ethplorer.io/getTopTokenHolders/0x01217729940055011F17BeFE6270e6E59B7d0337?apiKey='
+    console.log(baseURL2 + apiKey + '&limit=1000')
+    const response2 = await axios.get(baseURL2 + apiKey + '&limit=1000')
+    let holderArray2 = response2.data.holders
+    console.log(holderArray2.length)
+    var owners2 = holderArray2.map((item) => item.address)
+
+    for(let i = 0; i < owners2.length; i++){
+        owners1.push(owners2[i])
+    }
+    console.log(owners1.length)
+    console.log(owners1)
+
+    let owners = [...new Set(owners1)]
+    console.log(owners.length)
+    console.log(owners)
+
+    let balances = []
+    let ownerString = ""
+    let balanceString = ""
+    for (let i = 0; i < owners.length; i++) {
+        if (blacklist(owners[i]) == 'false') {
+            var ownership1 = getBN(await contract1.balanceOf(owners[i]))
+            var ownership2 = getBN(await contract2.balanceOf(owners[i]))
+            var ownership = ownership1.plus(ownership2)
+            let bal1 = BN2Str18(getBN(ownership1).dividedBy(10 ** 18))
+            let bal2 = BN2Str18(getBN(ownership2).dividedBy(10 ** 18))
+            console.log(owners[i], BN2Str(ownership), bal1, bal2)
+            balances.push({ 'owner': owners[i], 'ownership': BN2Str(ownership), "vether1":bal1, "vether2":bal2});
+            ownerString = ownerString + "," + owners[i]
+            // console.log(BN2Str(ownership))
+            balanceString = balanceString + "," + ownership
+            if ((i % 100 == 0 && i != 0) || (i == owners.length - 1)) {
+                var balancesStr = { 'owners': ownerString, 'ownership': balanceString };
+                await fs.writeFileSync(`./data/balancesV12-${i}.md`, JSON.stringify(balancesStr), 'utf8')
+                ownerString = ""
+                balanceString = ""
+            }
+        }
+        await fs.writeFileSync(`./data/balancesV12.json`, JSON.stringify(balances), 'utf8')
+    }
+    // await fs.writeFileSync(`./data/balancesV12.json`, JSON.stringify(balances), 'utf8')
+}
+
+const cleanAddresses = async () => {
+    provider = ethers.getDefaultProvider();
+    contract1 = new ethers.Contract(addr1(), abi(), provider)
+    contract2 = new ethers.Contract(addr2(), abi(), provider)
+
+    const data = fs.readFileSync('./data/balancesV12.json', 'utf8')
+    const balanceObject = JSON.parse(data)
+
+    let balances = []
+    let ownerString = ""
+    let balanceString = ""
+    for (let i = 0; i < owners.length; i++) {
+        if (blacklist(owners[i]) == 'false') {
+            var ownership1 = getBN(await contract1.balanceOf(owners[i]))
+            var ownership2 = getBN(await contract2.balanceOf(owners[i]))
+            var ownership = ownership1.plus(ownership2)
+            let bal1 = BN2Str18(getBN(ownership1).dividedBy(10 ** 18))
+            let bal2 = BN2Str18(getBN(ownership2).dividedBy(10 ** 18))
+            console.log(owners[i], BN2Str(ownership), bal1, bal2)
+            balances.push({ 'owner': owners[i], 'ownership': BN2Str(ownership), "vether1":bal1, "vether2":bal2});
+            ownerString = ownerString + "," + owners[i]
+            // console.log(BN2Str(ownership))
+            balanceString = balanceString + "," + ownership
+            if ((i % 100 == 0 && i != 0) || (i == owners.length - 1)) {
+                var balancesStr = { 'owners': ownerString, 'ownership': balanceString };
+                await fs.writeFileSync(`./data/balancesV12-${i}.md`, JSON.stringify(balancesStr), 'utf8')
+                ownerString = ""
+                balanceString = ""
+            }
+        }
+        await fs.writeFileSync(`./data/balancesV12.json`, JSON.stringify(balances), 'utf8')
+    }
+    // await fs.writeFileSync(`./data/balancesV12.json`, JSON.stringify(balances), 'utf8')
+}
 const getBalances = async () => {
     let balanceArray = [];
     const data = fs.readFileSync('./data/balancesV1.json', 'utf8')
@@ -133,6 +225,7 @@ const getBalances = async () => {
 }
 
 const blacklist = (address) => {
+    // console.log(address)
     if (address == '0x31bb711de2e457066c6281f231fb473fc5c2afd3'
         || address == '0x22ADE9c8a2AE6b820C94d4015a17247FccfC1389'
         || address == '0x0111011001100001011011000111010101100101'
@@ -145,11 +238,44 @@ const blacklist = (address) => {
     } else {
         return 'false'
     }
+
+// 0x506d07722744e4a390cd7506a2ba1a8157e63745,
+// 0x5100276ff4561d05a502527de00e9515129e3cfe,
+// 0x1e576095fdd79a2ec8301fee7f02f34213302dd4,
+// 0xf1ad4bfdf8829d55ec0ce7900ef9d122b2610673,
+// 0x40a7cb7052c274cc2e568c324b4c5d94383bec4f,
+// 0x693c188e40f760ecf00d2946ef45260b84fbc43e,
+// 0x944586cf150c0b10913734ccca59a872490e0377,
+// 0xf00ed9Bc9e51151d4Cdd602BD8b02a650E94d6E5,
+// 0x8CD11B38A32cc7e09259B3437AB0582238cF2227,
+// 0xef764BAC8a438E7E498c2E5fcCf0f174c3E3F8dB,
+// 0x944586CF150C0b10913734cccA59A872490E0377,
+// 0x693c188E40F760ecF00d2946ef45260b84FBc43e,
+// 0x8a3960472B3D63894B68DF3f10F58F11828d6fd9,
+// 0x693c188E40F760ecF00d2946ef45260b84FBc43e,
+// 0xF1Ad4BFDF8829d55eC0Ce7900EF9d122B2610673,
+}
+
+const checkTotals = () =>{
+    let balanceArray = [];
+    const data = fs.readFileSync('./data/balancesV12.json', 'utf8')
+    const balances = JSON.parse(data)
+    let total = balances.reduce((total, item) => +item.ownership + total, 0)
+    let totalV1 = balances.reduce((total, item) => +item.vether1 + total, 0)
+    let totalV2 = balances.reduce((total, item) => +item.vether2 + total, 0)
+
+    let totalStr = BN2Str18(getBN(total).dividedBy(10 ** 18))
+    console.log('Total V1&V2', totalStr)
+    console.log('TotalV1', totalV1)
+    console.log('TotalV2', totalV2)
+    console.log('Max Emitted Vether', 2048*50)
+    console.log('Vether lost to fees/contracts', 2048*50 - +totalStr)
 }
 
 const main = async () => {
     // await getAddresses()
-    await getBalances()
+    // await getAddressesBoth()
+    checkTotals()
 }
 
 

@@ -12,6 +12,7 @@ var Exchange2 = artifacts.require("./Exchange2.sol")
 let Vether1 = artifacts.require("./Vether1.sol");
 let Vether2 = artifacts.require("./Vether2.sol");
 let Vether3 = artifacts.require("./Vether3.sol");
+let Vether4 = artifacts.require("./Vether4.sol");
 
 module.exports = async() => {
     const token1 = await Token1.new();
@@ -35,5 +36,7 @@ module.exports = async() => {
     Vether2.setAsDeployed(vether2)
     const vether3 = await Vether3.new(vether1.address, vether2.address);
     Vether3.setAsDeployed(vether3)
+    const vether4 = await Vether4.new(vether1.address, vether2.address, vether3.address);
+    Vether4.setAsDeployed(vether4)
 
 };

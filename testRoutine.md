@@ -5,14 +5,12 @@ Acc2: 920000000000000000000
 
 1000000000000000000
 ## Test Routine
-0x8dc8b4d13d858367cec17ff144ea2bcf718ff8c6
 // Get VETHER
 Mine Old Contract
 - withdraw
 - transfer
 - fees
 
-0xfEcb4Bf376067B273Ae1f9DA25252Fce3D7D041f
 // Upgrade
 ExcludeBurnAddress
 Try to upgrade with no permission

@@ -64,9 +64,9 @@ const updateDetails = async () => {
 	// console.log(addresses)
 	// for(var i = 0; i<addresses.length; i++){
 	// 	await checkShare(addresses[i])
-	// 	await fs.writeFileSync(`./data/vether2Shares.json`, JSON.stringify(arrayShares), 'utf8')
+	// 	await fs.writeFileSync(`./data/vether2Shares49.json`, JSON.stringify(arrayShares), 'utf8')
 	// }
-	// await fs.writeFileSync(`./data/arrayAddress2.json`, JSON.stringify(arrayAddress), 'utf8')
+	// await fs.writeFileSync(`./data/arrayAddress49.json`, JSON.stringify(addresses), 'utf8')
 
 	// Etherscan map
 	// const baseURLES = 'http://api.etherscan.io/api?module=account&action=txlist&address=0x31Bb711de2e457066c6281f231fb473FC5c2afd3&startblock=0&endblock=99999999&sort=asc'
@@ -247,12 +247,15 @@ const claimShare1 = async (arrayAddress) => {
 
 const claimShareBalance = async () => {
 	console.log('claiming shares 1')
+	// const data = fs.readFileSync('./data/arrayAddress49.json', 'utf8')
+    // let owners  = JSON.parse(data)
 	const data = fs.readFileSync('./data/export.csv', 'utf8')
 	var owners = data.split(/\r?\n/);
-	// console.log(owners)
+	console.log(owners)
     // const balances  = JSON.parse(data)
     // const owners = balances.owners
-	let day = 47
+	let day = 49
+	let arrayAddress = []
 	for(var i = 0; i < owners.length; i++){
 
 		// console.log('withdrawn', arrayAddress[i].withdrawn)
@@ -265,10 +268,12 @@ const claimShareBalance = async () => {
 				let tx = await contract2.withdrawShareForMember(1, day, owners[i], {gasPrice:60*10**9});
 				console.log(tx.hash);
 				await tx.wait();
-				// let share = {'address': owners[i].address, 'withdrawn': true, 'tx': tx.hash}
+
+				let share = {'address': owners[i].address, 'withdrawn': true, 'tx': tx.hash}
 				// let share = {'address': arrayAddress[i].address, 'withdrawn': true, 'tx': 'test'}
 				// owners[i] = share
-				// await fs.writeFileSync('./data/arrayAddress-final.json', JSON.stringify(arrayAddress), 'utf8')
+				arrayAddress[i] = share
+				await fs.writeFileSync('./data/arrayAddress-49.json', JSON.stringify(arrayAddress), 'utf8')
 			}
 			
 		// }

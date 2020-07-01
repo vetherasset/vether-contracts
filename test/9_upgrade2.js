@@ -312,6 +312,7 @@ function excludeVether(_vether) {
 			console.log((await vether3.excludedArray(0)))
 			console.log((await vether3.excludedArray(1)))
 			console.log((await vether3.excludedArray(2)))
+			console.log('blockheight', BN2Str(await vether3.mapAddress_BlockChange(acc0)))
 		}
 	})
 }
