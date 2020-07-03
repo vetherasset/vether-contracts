@@ -31,12 +31,14 @@ function constructor(accounts){
   acc0 = accounts[0]; acc1 = accounts[1]; acc2 = accounts[2];
 
   it("constructor events", async () => {
-    let VetherOld = artifacts.require("./Vether1.sol");
-    vetherOld = await VetherOld.new()
+    let Vether1 = artifacts.require("./Vether1.sol");
+    vether1 = await Vether1.new()
     let Vether2 = artifacts.require("./Vether2.sol");
-    vether2 = await Vether2.new(vetherOld.address)
-    let Vether = artifacts.require("./Vether4.sol");
-    coin = await Vether.new(vetherOld.address, vether2.address)
+    vether2 = await Vether2.new(vether1.address)
+    let Vether3 = artifacts.require("./Vether3.sol");
+    vether3 = await Vether3.new(vether1.address, vether2.address)
+    let Vether4 = artifacts.require("./Vether4.sol");
+    coin = await Vether4.new(vether1.address, vether2.address, vether3.address)
     coinAddress = coin.address;
     console.log("coin:", coinAddress)
 

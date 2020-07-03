@@ -1,8 +1,9 @@
-var Vether = artifacts.require("./Vether.sol")
+// var Vether = artifacts.require("./Vether.sol")
 const BigNumber = require('bignumber.js')
 
 var coin; var coinAddress
 var acc0; var acc1; var acc2;
+var vether1; var vether2; var vether3; var vether4;
 
 const Emission = '2048'; 
 const Supply = "8190"; 
@@ -28,21 +29,23 @@ function BN2Str(BN) { return (new BigNumber(BN)).toFixed() }
 contract("Vether", function(accounts) {
   constructor(accounts)
   sendEther()
-  withdraws()
-  transfer()
-  sendAgain()
-  checkTotals()
+  // withdraws()
+  // transfer()
+  // sendAgain()
+  // checkTotals()
 })
 
 function constructor(accounts) {
   acc0 = accounts[0]; acc1 = accounts[1]; acc2 = accounts[2];
   it("constructor events", async () => {
-    let VetherOld = artifacts.require("./VetherOld.sol");
-    vetherOld = await VetherOld.new()
+    let Vether1 = artifacts.require("./Vether1.sol");
+    vether1 = await Vether1.new()
     let Vether2 = artifacts.require("./Vether2.sol");
-    vether2 = await Vether2.new(vetherOld.address)
-    let Vether = artifacts.require("./Vether4.sol");
-    coin = await Vether.new(vetherOld.address, vether2.address)
+    vether2 = await Vether2.new(vether1.address)
+    let Vether3 = artifacts.require("./Vether3.sol");
+    vether3 = await Vether3.new(vether1.address, vether2.address)
+    let Vether4 = artifacts.require("./Vether4.sol");
+    coin = await Vether4.new(vether1.address, vether2.address, vether3.address)
     coinAddress = coin.address;
     console.log("coin:", coinAddress) 
   });
@@ -62,7 +65,13 @@ function sendEther() {
         let _emission = BN2Str(await coin.emission())
         await delay(timeDelay);
         let receipt = await coin.send(sendEth, { from: _acc})
-        //console.log("logs:%s - first:%s", receipt.logs.length, receipt.logs[0].event); 
+        console.log("logs:%s - first:%s", receipt.logs.length, receipt.logs[0].event); 
+        for(let i = 0; i<receipt.logs.length; i++){
+          console.log(`log ${i}`, receipt.logs[i].event)
+          if(receipt.logs[i].event == "NewDay"){
+            // console.log(receipt.logs[i])
+          }
+        }
         console.log('Era: %s - Day: %s - Emission: %s', _era, _day, _emission)
 
         let units = await coin.mapEraDay_MemberUnits.call(_era, _day, _acc);

@@ -7,7 +7,8 @@ The Vether smart contracts implements the [Vether whitepaper](https://bitcointal
 ### Mainet
 Vether1: 0x31Bb711de2e457066c6281f231fb473FC5c2afd3
 Vether2: 0x01217729940055011F17BeFE6270e6E59B7d0337
-Vether3:
+Vether3: 0x75572098dc462F976127f59F8c97dFa291f81d8b
+Vether4: 0x4ba6ddd7b89ed838fed25d208d4f644106e34279
 
 
 ### Rinkeby-Slow: 
@@ -22,7 +23,7 @@ Vether3:
 
 ### Rinkeby-Fast-2
 Vether1: 0x3aaC4384E118388076C7E4085f39d364781D8604
-Vether2: 0x53753efb66b420fe461263e190fbb45f40ba1f79
+Vether2: 0x53753Efb66b420fE461263E190fBb45F40bA1f79
 Vether3: 0x68BDD33B0185b3Bf97Da0DEeC0f6d8EF2525193F
 
 ### Other
